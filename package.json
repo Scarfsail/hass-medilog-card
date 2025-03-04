@@ -11,6 +11,7 @@
   "dependencies": {
     "lit": "3.2.1",
     "dayjs": "1.11.13",
+    "@mdi/js": "^7.4.47",
     "home-assistant-js-websocket": "9.4.0"
   },
   "devDependencies": {
