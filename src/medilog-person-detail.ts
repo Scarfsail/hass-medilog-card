@@ -6,6 +6,7 @@ import 'dayjs/locale/cs';
 import { MedilogRecord, MedilogRecordRaw, PersonInfo } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
+import { Utils } from "./utils";
 dayjs.extend(duration);
 
 
@@ -53,43 +54,68 @@ export class MedilogPersonDetail extends LitElement {
     }
 
     static styles = css`
-        .record-list {
-            list-style: none;
-            padding: 0;
+        .record-table {
+            border-collapse: collapse;
+            margin-bottom: 16px;
         }
         
-        .record-item {
+        .record-table th {
+            text-align: left;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+            color: var(--secondary-text-color);
+            font-weight: 500;
+        }
+        
+        .record-table td {
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+        }
+        
+        .record-table tbody tr {
             cursor: pointer;
-            padding: 8px;
-            margin-bottom: 8px;
-            border: 1px solid gray;
-            border-radius: 4px;
         }
         
-        .record-item:hover {
+        .record-table tbody tr:hover {
             background-color: var(--primary-color);
+            color: var(--text-primary-color);
         }
-
+        
+        ha-button {
+            margin-top: 8px;
+        }
     `
+    
     render() {
         if (!this._person) {
             return "Person is not defined";
         }
 
-
         return html`
-            <ul class="record-list">
-                ${this._records.map(record => html`
-                    <li class="record-item" @click=${() => this.showRecordDetailsDialog(record)}>
-                        ${record.datetime} - ${record.pill || 'No medication'}
-                    </li>
-                `)}
-            </ul>
+            <table class="record-table">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Before</th>
+                        <th>Temperature</th>
+                        <th>Medication</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${this._records.map(record => html`
+                        <tr @click=${() => this.showRecordDetailsDialog(record)}>
+                            <td>${record.datetime.format('YYYY-MM-DD HH:mm')}</td>
+                            <td>${Utils.formatDurationFromTo(record.datetime)}</td>
+                            <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
+                            <td>${record.pill || 'None'}</td>
+                        </tr>
+                    `)}
+                </tbody>
+            </table>
 
             <ha-button @click=${this.addNewRecord}>Add New Record</ha-button>
         `
     }
-
 
     private dialogClosed(changed: boolean) {
         if (changed) {
