@@ -86,10 +86,16 @@ export class MedilogRecordDetailDialog extends LitElement {
                 <ha-button slot="secondaryAction" @click=${this.closeDialog}>
                     ${this.hass.localize('ui.common.cancel')}
                 </ha-button>
+                ${this._editedRecord.id ? html`
+                    <ha-button slot="primaryAction" @click=${this.deleteClick} class="button-error">
+                        ${this.hass.localize('ui.common.delete')}
+                    </ha-button>
 
-                <ha-button slot="primaryAction" @click=${this.deleteClick} class="button-error">
-                    ${this.hass.localize('ui.common.delete')}
+                <ha-button slot="primaryAction" @click=${this.duplicateClick}>
+                    ${this.hass.localize('ui.common.duplicate')}
                 </ha-button>
+
+                ` : nothing}
 
                 <ha-button slot="primaryAction" @click=${this.saveClick}>
                     ${this.hass.localize('ui.common.save')}
@@ -120,7 +126,12 @@ export class MedilogRecordDetailDialog extends LitElement {
         return decimals ? +(temperature - Math.trunc(temperature)).toPrecision(1) == t / 10 : Math.trunc(temperature) == t;
     }
 
+    private duplicateClick() {
+        if (!this._editedRecord)
+            return;
 
+        this._editedRecord = { ...this._editedRecord, id: undefined, datetime: dayjs() };
+    }
     private async saveClick() {
         if (!this.hass || !this._editedRecord)
             return;
