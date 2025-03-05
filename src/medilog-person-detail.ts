@@ -5,7 +5,7 @@ import duration from 'dayjs/plugin/duration'
 import 'dayjs/locale/cs';
 import { MedilogRecord, MedilogRecordRaw, PersonInfo } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
-import "./medilog-record-detail"
+import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 dayjs.extend(duration);
 
 
@@ -21,8 +21,6 @@ export class MedilogPersonDetail extends LitElement {
     }
     @property({ attribute: false }) public hass?: HomeAssistant;
     @state() private _records: MedilogRecord[] = [];
-
-    @state() private _selectedRecord?: MedilogRecord;
 
     connectedCallback() {
         super.connectedCallback();
@@ -82,35 +80,51 @@ export class MedilogPersonDetail extends LitElement {
         return html`
             <ul class="record-list">
                 ${this._records.map(record => html`
-                    <li class="record-item" @click=${() => this._showRecordDetails(record)}>
+                    <li class="record-item" @click=${() => this.showRecordDetailsDialog(record)}>
                         ${record.datetime} - ${record.pill || 'No medication'}
                     </li>
                 `)}
             </ul>
 
             <ha-button @click=${this.addNewRecord}>Add New Record</ha-button>
-            <medilog-record-detail .record=${this._selectedRecord} .personId=${this._person.entity_id} .hass=${this.hass} @closed=${(e: CustomEvent) => this.dialogClosed(e.detail.changed)}></medilog-record-detail>
         `
     }
 
 
     private dialogClosed(changed: boolean) {
-        this._selectedRecord = undefined;
         if (changed) {
             this.fetchRecords();
         }
     }
 
     private addNewRecord() {
-        this._selectedRecord = {
-            datetime: dayjs(),    
+        this.showRecordDetailsDialog({
+            datetime: dayjs(),
             temperature: 36.7,
             pill: '',
             note: ''
-        };
-    }
-    private _showRecordDetails(record: MedilogRecord) {
-        this._selectedRecord = record;
+        });
     }
 
+    private showRecordDetailsDialog(record: MedilogRecord) {
+        showMedilogRecordDetailDialog(this, {
+            record: record,
+            personId: this._person?.entity_id || '',
+            closed: this.dialogClosed.bind(this)
+        });
+    }
+
+}
+
+function showMedilogRecordDetailDialog(element: HTMLElement, params: MedilogRecordDetailDialogParams) {
+    const event = new CustomEvent("show-dialog", {
+        bubbles: true,
+        composed: true,
+        detail: {
+            dialogTag: "medilog-record-detail-dialog",
+            dialogImport: () => import("./medilog-record-detail-dialog"),
+            dialogParams: params
+        }
+    });
+    element.dispatchEvent(event);
 }
