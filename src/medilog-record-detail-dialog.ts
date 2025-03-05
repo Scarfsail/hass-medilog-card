@@ -6,6 +6,7 @@ import type { HomeAssistant } from "../hass-frontend/src/types";
 import { mdiClose } from '@mdi/js';
 import { sharedStyles } from "./shared-styles";
 import { loadHaForm, loadHaYamlEditor } from "./load-ha-elements";
+import { getLocalizeFunction } from "./localize/localize";
 
 export interface MedilogRecordDetailDialogParams {
     record: MedilogRecord;
@@ -49,12 +50,15 @@ export class MedilogRecordDetailDialog extends LitElement {
             return nothing;
         }
 
+        const localize = getLocalizeFunction(this.hass!);
 
         return html`
             <ha-dialog open .heading=${true} @closed=${this.closeDialog} @close-dialog=${this.closeDialog}>
                 <ha-dialog-header slot="heading">
                     <ha-icon-button slot="navigationIcon" dialogAction="cancel" .path=${mdiClose}></ha-icon-button>
-                    <span slot="title">${this._editedRecord.id ? "Upravit" : "Nový záznam"}</span>
+                    <span slot="title">${this._editedRecord.id 
+                        ? localize('dialog.edit_record')
+                        : localize('dialog.new_record')}</span>
                 </ha-dialog-header>
                 <div class="wrapper">
                     <div class="datetime-field">
@@ -66,39 +70,39 @@ export class MedilogRecordDetailDialog extends LitElement {
                         ></ha-selector>
                     </div>
                     <p>
-                        <strong>Teplota:</strong> ${this._editedRecord.temperature}
+                        <strong>${localize('dialog.temperature')}:</strong> ${this._editedRecord.temperature}
                         <ha-button @click=${() => this._editedRecord = { ...this._editedRecord!, temperature: undefined }}>X</ha-button>
                     </p>
                     <div class="field">
                         <div class="temperature-buttons">
                             ${[36, 37, 38, 39, 40].map((t) => html`
-                            <ha-button class=${this.doesTemperatureMatch(t, false) ? "button-active" : ""} @click=${() => this.setTemperature(t, false)}>${t}</ha-button>`)}
+                            <ha-button .raised=${this.doesTemperatureMatch(t, false)} @click=${() => this.setTemperature(t, false)}>${t}</ha-button>`)}
                         </div>
                         <div class="temperature-buttons">
                             ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((t) => html`
-                            <ha-button class=${this.doesTemperatureMatch(t, true) ? "button-active" : ""} @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
+                            <ha-button .raised=${this.doesTemperatureMatch(t, true)}  @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
                         </div>
                     </div>
-                    <ha-textfield .label=${"Lék"} .value=${this._editedRecord.pill} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, pill: (e.target as HTMLInputElement).value }; }}></ha-textfield>
-                    <ha-textarea .label=${"Poznámky"} .value=${this._editedRecord.note} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textarea>
+                    <ha-textfield .label=${localize('dialog.medication')} .value=${this._editedRecord.pill} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, pill: (e.target as HTMLInputElement).value }; }}></ha-textfield>
+                    <ha-textarea .label=${localize('dialog.notes')} .value=${this._editedRecord.note} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textarea>
                 </div>
 
                 <ha-button slot="secondaryAction" @click=${this.closeDialog}>
-                    ${this.hass.localize('ui.common.cancel')}
+                    ${localize('common.cancel')}
                 </ha-button>
                 ${this._editedRecord.id ? html`
                     <ha-button slot="primaryAction" @click=${this.deleteClick} class="button-error">
-                        ${this.hass.localize('ui.common.delete')}
+                        ${localize('common.delete')}
                     </ha-button>
 
                 <ha-button slot="primaryAction" @click=${this.duplicateClick}>
-                    ${this.hass.localize('ui.common.duplicate')}
+                    ${localize('common.duplicate')}
                 </ha-button>
 
                 ` : nothing}
 
                 <ha-button slot="primaryAction" @click=${this.saveClick}>
-                    ${this.hass.localize('ui.common.save')}
+                    ${localize('common.save')}
                 </ha-button>
 
             </ha-dialog>
@@ -147,7 +151,9 @@ export class MedilogRecordDetailDialog extends LitElement {
     private async deleteClick() {
         if (!this.hass || !this._editedRecord)
             return;
-        if (!confirm("Opravdu chcete smazat tento záznam?")) {
+        
+        const localize = getLocalizeFunction(this.hass!);
+        if (!confirm(localize('dialog.delete_confirm'))) {
             return;
         }
         await this.hass.callService('medilog', 'delete_record', {

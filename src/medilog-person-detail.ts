@@ -7,9 +7,8 @@ import { MedilogRecord, MedilogRecordRaw, PersonInfo } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { Utils } from "./utils";
+import { getLocalizeFunction } from "./localize/localize";
 dayjs.extend(duration);
-
-
 
 @customElement("medilog-person-detail")
 export class MedilogPersonDetail extends LitElement {
@@ -90,15 +89,16 @@ export class MedilogPersonDetail extends LitElement {
         if (!this._person) {
             return "Person is not defined";
         }
-
+        
+        const localize = getLocalizeFunction(this.hass!);
         return html`
             <table class="record-table">
                 <thead>
                     <tr>
-                        <th>Date & Time</th>
-                        <th>Before</th>
-                        <th>Temperature</th>
-                        <th>Medication</th>
+                        <th>${localize('table.datetime')}</th>
+                        <th>${localize('table.before')}</th>
+                        <th>${localize('table.temperature')}</th>
+                        <th>${localize('table.medication')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -107,13 +107,13 @@ export class MedilogPersonDetail extends LitElement {
                             <td>${record.datetime.format('YYYY-MM-DD HH:mm')}</td>
                             <td>${Utils.formatDurationFromTo(record.datetime)}</td>
                             <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
-                            <td>${record.pill || 'None'}</td>
+                            <td>${record.pill || localize('common.none')}</td>
                         </tr>
                     `)}
                 </tbody>
             </table>
 
-            <ha-button @click=${this.addNewRecord}>Add New Record</ha-button>
+            <ha-button @click=${this.addNewRecord}>${localize('actions.add_record')}</ha-button>
         `
     }
 

@@ -1,0 +1,26 @@
+{
+  "common": {
+    "save": "Uložit",
+    "cancel": "Zrušit",
+    "delete": "Smazat",
+    "duplicate": "Duplikovat",
+    "none": "Žádný"
+  },
+  "dialog": {
+    "edit_record": "Upravit",
+    "new_record": "Nový záznam",
+    "temperature": "Teplota",
+    "medication": "Lék",
+    "notes": "Poznámky",
+    "delete_confirm": "Opravdu chcete smazat tento záznam?"
+  },
+  "table": {
+    "datetime": "Datum a čas",
+    "before": "Před",
+    "temperature": "Teplota",
+    "medication": "Lék"
+  },
+  "actions": {
+    "add_record": "Přidat nový záznam"
+  }
+}

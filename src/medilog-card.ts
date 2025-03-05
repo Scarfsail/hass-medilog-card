@@ -112,7 +112,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                         <ha-button 
                             .value=${person.value} 
                             .label=${person.label}
-                            class=${this.person?.entity_id === person.value ? 'button-active' : ''}
+                            .raised=${this.person?.entity_id === person.value}
                             @click=${() => this.person = this.persons.find(p => p.entity_id === person.value)}
                         ></ha-button>`)}            
                 </div>
