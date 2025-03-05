@@ -7,6 +7,7 @@ import { MedilogRecord, MedilogRecordRaw, PersonInfo } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { mdiClose } from '@mdi/js';
 import { loadHaForm, loadHaYamlEditor } from "./load-ha-elements";
+import { sharedStyles } from "./shared-styles";
 
 loadHaForm();
 loadHaYamlEditor()
@@ -33,11 +34,13 @@ export class MedilogRecordDetail extends LitElement {
         });
     }
 
-    static styles = css`
+    static styles = [sharedStyles, css`
         .fill {
-            width: 100%;}
+            width: 100%;
+        }
         .field {
-            margin-bottom: 1em;}
+            margin-bottom: 1em;
+        }
         .temperature-buttons{
             display: flex;
             justify-content: space-between;
@@ -45,12 +48,7 @@ export class MedilogRecordDetail extends LitElement {
             width: 350px;
             flex-wrap: wrap;
         }
-        ha-button.button-active {
-           background-color: var(--primary-background-color);
-            border-color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-        }
-    `
+    `]
 
     render() {
         if (!this._record || !this.hass) {
@@ -58,45 +56,50 @@ export class MedilogRecordDetail extends LitElement {
         }
 
         return html`
-            <ha-dialog open .heading=${true} @closed=${this.closeDialog} @close-dialog=${this.closeDialog}>        
-            <ha-dialog-header slot="heading"></ha-dialog-header>
-                <ha-icon-button slot="navigationIcon" dialogAction="cancel" .path=${mdiClose}></ha-icon-button>
-                <span slot="title">${this._record.id ? "Upravit" : "Nový záznam"}</span>
-            </ha-dialog-header>
-            <div class="wrapper">
-                <div class="datetime-field">
-                <ha-selector
-                    .hass=${this.hass}
-                    .selector=${{ datetime: {} }}
-                    .value=${this._record.datetime.format("YYYY-MM-DD HH:mm:ss")}
-                    @value-changed=${(e: CustomEvent) => { this._record = { ...this._record!, datetime: dayjs(e.detail.value) } }}
-                ></ha-selector>
+            <ha-dialog open .heading=${true} @closed=${this.closeDialog} @close-dialog=${this.closeDialog}>
+                <ha-dialog-header slot="heading">
+                    <ha-icon-button slot="navigationIcon" dialogAction="cancel" .path=${mdiClose}></ha-icon-button>
+                    <span slot="title">${this._record.id ? "Upravit" : "Nový záznam"}</span>
+                </ha-dialog-header>
+                <div class="wrapper">
+                    <div class="datetime-field">
+                        <ha-selector
+                            .hass=${this.hass}
+                            .selector=${{ datetime: {} }}
+                            .value=${this._record.datetime.format("YYYY-MM-DD HH:mm:ss")}
+                            @value-changed=${(e: CustomEvent) => { this._record = { ...this._record!, datetime: dayjs(e.detail.value) } }}
+                        ></ha-selector>
+                    </div>
+                    <p>
+                        <strong>Teplota:</strong> ${this._record.temperature}
+                        <ha-button @click=${()=>this._record={...this._record!, temperature:undefined}}>X</ha-button>
+                    </p>
+                    <div class="field">
+                        <div class="temperature-buttons">
+                            ${[36, 37, 38, 39, 40].map((t) => html`
+                            <ha-button class=${this.doesTemperatureMatch(t, false) ? "button-active" : ""} @click=${() => this.setTemperature(t, false)}>${t}</ha-button>`)}
+                        </div>
+                        <div class="temperature-buttons">
+                            ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((t) => html`
+                            <ha-button class=${this.doesTemperatureMatch(t, true) ? "button-active" : ""} @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
+                        </div>
+                    </div>
+                    <ha-textfield .label=${"Lék"} .value=${this._record.pill} class="fill field" @change=${(e: Event) => { this._record = { ...this._record!, pill: (e.target as HTMLInputElement).value }; }}></ha-textfield>
+                    <ha-textarea .label=${"Poznámky"} .value=${this._record.note} class="fill field" @change=${(e: Event) => { this._record = { ...this._record!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textarea>
                 </div>
-                <p><strong>Teplota:</strong> ${this._record.temperature}</p>
-                <div class="field">
-                <div class="temperature-buttons"></div>
-                    ${[36, 37, 38, 39, 40].map((t) => html`
-                    <ha-button class=${this.doesTemperatureMatch(t, false) ? "button-active" : ""} @click=${() => this.setTemperature(t, false)}>${t}</ha-button>`)}
-                </div>
-                <div class = "temperature-buttons">
-                    ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((t) => html`
-                    <ha-button class=${this.doesTemperatureMatch(t, true) ? "button-active" : ""} @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
-                </div>
-                </div>
-                <ha-textfield .label=${"Lék"} .value=${this._record.pill} class="fill field" @change=${(e: Event) => { this._record = { ...this._record!, pill: (e.target as HTMLInputElement).value }; }}></ha-textfield>
-                <ha-textarea .label=${"Poznámky"} .value=${this._record.note} class="fill field" @change=${(e: Event) => { this._record = { ...this._record!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textarea>
-            </div>
 
-            <ha-button slot="primaryAction" @click=${this.deleteClick} style=${"--mdc-theme-primary: var(--error-color);"}>
-                ${this.hass.localize('ui.common.delete')}
-            </ha-button>
+                <ha-button slot="secondaryAction" @click=${this.closeDialog}>
+                    ${this.hass.localize('ui.common.cancel')}
+                </ha-button>
 
-            <ha-button slot="primaryAction" @click=${this.saveClick}>
-                ${this.hass.localize('ui.common.save')}
-            </ha-button>
-            <ha-button slot="secondaryAction" @click=${this.closeDialog}>
-                ${this.hass.localize('ui.common.cancel')}
-            </ha-button>
+                <ha-button slot="primaryAction" @click=${this.deleteClick} class="button-error">
+                    ${this.hass.localize('ui.common.delete')}
+                </ha-button>
+
+                <ha-button slot="primaryAction" @click=${this.saveClick}>
+                    ${this.hass.localize('ui.common.save')}
+                </ha-button>
+
             </ha-dialog>
         `;
 

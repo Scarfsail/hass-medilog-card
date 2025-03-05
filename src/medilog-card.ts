@@ -8,6 +8,7 @@ import duration from 'dayjs/plugin/duration'
 import 'dayjs/locale/cs';
 import { PersonInfo } from "./models";
 import "./medilog-person-detail"
+import { sharedStyles } from "./shared-styles";
 dayjs.extend(duration);
 
 interface MedilogCardConfig extends LovelaceCardConfig {
@@ -46,11 +47,12 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                 if (!this.person) {
                     const current_user_id = this._hass?.user?.id;
                     // Find person entity that matches current user's ID
-                    const matchingPerson = this.persons.find(person => 
+                    const matchingPerson = this.persons.find(person =>
                         person.entity_id === this._hass?.states[person.entity_id]?.attributes?.user_id
                     );
                     this.person = matchingPerson || this.persons[0];
-                }}
+                }
+            }
         } catch (error) {
             console.error("Error fetching persons:", error);
         }
@@ -82,20 +84,14 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         super.disconnectedCallback();
     }
 
-    static styles = css`
+    static styles = [sharedStyles, css`
     // add your styles here
     
     ha-button {
         margin: 0.2rem;
     }
     
-    ha-button.button-active {
-        background-color: var(--primary-background-color);
-        border-color: var(--primary-color);
-        border: 1px solid var(--primary-color);
-    }
-    
-`
+`]
 
     render() {
 
@@ -111,14 +107,13 @@ export class MedilogCard extends LitElement implements LovelaceCard {
 
         return html`
             <ha-card>
-                MedilogCard
                 <div>
                     ${personItems.map(person => html`
                         <ha-button 
                             .value=${person.value} 
                             .label=${person.label}
                             class=${this.person?.entity_id === person.value ? 'button-active' : ''}
-                            @click=${() => this.person = this.persons.find(p=>p.entity_id === person.value)}
+                            @click=${() => this.person = this.persons.find(p => p.entity_id === person.value)}
                         ></ha-button>`)}            
                 </div>
                 ${this.person ? html`<medilog-person-detail .person=${this.person} .hass=${this._hass}></medilog-person-detail>` : 'No person selected'}

@@ -64,7 +64,7 @@ export class MedilogPersonDetail extends LitElement {
             cursor: pointer;
             padding: 8px;
             margin-bottom: 8px;
-            border: 1px solid #eee;
+            border: 1px solid gray;
             border-radius: 4px;
         }
         
@@ -80,7 +80,6 @@ export class MedilogPersonDetail extends LitElement {
 
 
         return html`
-            <div>Total Records: ${this._records.length}</div>
             <ul class="record-list">
                 ${this._records.map(record => html`
                     <li class="record-item" @click=${() => this._showRecordDetails(record)}>
@@ -89,10 +88,12 @@ export class MedilogPersonDetail extends LitElement {
                 `)}
             </ul>
 
-            <medilog-record-detail .record=${this._selectedRecord} .personId=${this._person.entity_id} .hass=${this.hass} @closed=${(e: CustomEvent) => this.dialogClosed(e.detail.changed)}></medilog-record-detail>                
             <ha-button @click=${this.addNewRecord}>Add New Record</ha-button>
+            <medilog-record-detail .record=${this._selectedRecord} .personId=${this._person.entity_id} .hass=${this.hass} @closed=${(e: CustomEvent) => this.dialogClosed(e.detail.changed)}></medilog-record-detail>
         `
     }
+
+
     private dialogClosed(changed: boolean) {
         this._selectedRecord = undefined;
         if (changed) {
