@@ -11,6 +11,12 @@ export default defineConfig(({ mode }) => {
                 formats: ["es"],
                 fileName: () => `medilog-card-${isProduction ? "prod" : "dev"}.js`, // Update file name
             },
+            rollupOptions: {
+                output: {
+                    inlineDynamicImports: true
+                },
+                external: []
+            },
             emptyOutDir: false,
             // Relative to the root
             outDir: './dist',
