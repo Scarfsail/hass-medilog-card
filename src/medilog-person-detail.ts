@@ -92,6 +92,8 @@ export class MedilogPersonDetail extends LitElement {
         
         const localize = getLocalizeFunction(this.hass!);
         return html`
+            <ha-button @click=${this.addNewRecord}>${localize('actions.add_record')}</ha-button>
+
             <table class="record-table">
                 <thead>
                     <tr>
@@ -104,7 +106,7 @@ export class MedilogPersonDetail extends LitElement {
                 <tbody>
                     ${this._records.map(record => html`
                         <tr @click=${() => this.showRecordDetailsDialog(record)}>
-                            <td>${record.datetime.format('YYYY-MM-DD HH:mm')}</td>
+                            <td>${record.datetime.format('DD.MM.YYYY HH:mm')}</td>
                             <td>${Utils.formatDurationFromTo(record.datetime)}</td>
                             <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
                             <td>${record.pill || localize('common.none')}</td>
@@ -112,8 +114,6 @@ export class MedilogPersonDetail extends LitElement {
                     `)}
                 </tbody>
             </table>
-
-            <ha-button @click=${this.addNewRecord}>${localize('actions.add_record')}</ha-button>
         `
     }
 
