@@ -20,3 +20,8 @@ export interface MedilogRecord {
     medication?: string;
     note?: string;
 }
+export interface MedilogRecordsGroupByTime {
+    from: dayjs.Dayjs | null,
+    to: dayjs.Dayjs,
+    records: (MedilogRecord | null)[]
+};
