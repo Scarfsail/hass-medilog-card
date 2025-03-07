@@ -56,9 +56,9 @@ export class MedilogRecordDetailDialog extends LitElement {
             <ha-dialog open .heading=${true} @closed=${this.closeDialog} @close-dialog=${this.closeDialog}>
                 <ha-dialog-header slot="heading">
                     <ha-icon-button slot="navigationIcon" dialogAction="cancel" .path=${mdiClose}></ha-icon-button>
-                    <span slot="title">${this._editedRecord.id 
-                        ? localize('dialog.edit_record')
-                        : localize('dialog.new_record')}</span>
+                    <span slot="title">${this._editedRecord.id
+                ? localize('dialog.edit_record')
+                : localize('dialog.new_record')}</span>
                 </ha-dialog-header>
                 <div class="wrapper">
                     <div class="datetime-field">
@@ -83,8 +83,8 @@ export class MedilogRecordDetailDialog extends LitElement {
                             <ha-button .raised=${this.doesTemperatureMatch(t, true)}  @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
                         </div>
                     </div>
-                    <ha-textfield .label=${localize('dialog.medication')} .value=${this._editedRecord.medication} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, medication: (e.target as HTMLInputElement).value }; }}></ha-textfield>
-                    <ha-textarea .label=${localize('dialog.notes')} .value=${this._editedRecord.note} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textarea>
+                    <ha-textfield .label=${localize('dialog.medication')} .value=${this._editedRecord.medication ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, medication: (e.target as HTMLInputElement).value }; }}></ha-textfield>
+                    <ha-textarea .label=${localize('dialog.notes')} .value=${this._editedRecord.note ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textarea>
                 </div>
 
                 <ha-button slot="secondaryAction" @click=${this.closeDialog}>
@@ -151,7 +151,7 @@ export class MedilogRecordDetailDialog extends LitElement {
     private async deleteClick() {
         if (!this.hass || !this._editedRecord)
             return;
-        
+
         const localize = getLocalizeFunction(this.hass!);
         if (!confirm(localize('dialog.delete_confirm'))) {
             return;
