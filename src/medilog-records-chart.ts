@@ -52,7 +52,7 @@ class MedilogRecordsChart extends LitElement {
                 height: 350
             },
             series: [{
-                name: 'Body Temperature',
+                name: 'Teplota',
                 data: temperatureSeries
             }],
             xaxis: {
@@ -60,6 +60,40 @@ class MedilogRecordsChart extends LitElement {
             },
             annotations: {
                 xaxis: medicationAnnotations
+            },
+            dataLabels: {
+                enabled: true,
+                offsetY: -10,
+                formatter: function(val:number) {
+                    return val + "°";
+                },
+                style: {
+                    colors: ['#333']
+                }
+            },
+            tooltip: {
+                theme: 'dark',
+                x: {
+                    format: 'MMM dd, yyyy HH:mm',
+                },
+                y: {
+                    formatter: function(val:number) {
+                        return val + "°";
+                    }
+                }
+            },
+            markers: {
+                size: 6,
+                colors: undefined,
+                strokeColors: '#fff',
+                strokeWidth: 2,
+                strokeOpacity: 0.9,
+                strokeDashArray: 0,
+                fillOpacity: 1,
+                shape: "circle",
+                hover: {
+                    size: 8
+                }
             }
         };
 

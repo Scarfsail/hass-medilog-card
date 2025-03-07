@@ -30,8 +30,8 @@ export class MedilogRecords extends LitElement {
 
         return html`
             <div>
-                <ha-button .raised=${this.visualization == 'table'} @click=${() => this.visualization = 'table'}>${localize("common.table")}</ha-button>            
-                <ha-button .raised=${this.visualization == 'chart'} @click=${() => this.visualization = 'chart'}>${localize("common.chart")}</ha-button>
+                <ha-button .raised=${this.visualization == 'table'} @click=${() => this.visualization = 'table'}><ha-icon icon="mdi:table"></ha-icon></ha-button>            
+                <ha-button .raised=${this.visualization == 'chart'} @click=${() => this.visualization = 'chart'}><ha-icon icon="mdi:chart-line"></ha-icon></ha-button>
             </div>
             
             ${this.visualization === 'table'
