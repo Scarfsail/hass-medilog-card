@@ -83,7 +83,7 @@ export class MedilogRecordDetailDialog extends LitElement {
                             <ha-button .raised=${this.doesTemperatureMatch(t, true)}  @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
                         </div>
                     </div>
-                    <ha-textfield .label=${localize('dialog.medication')} .value=${this._editedRecord.pill} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, pill: (e.target as HTMLInputElement).value }; }}></ha-textfield>
+                    <ha-textfield .label=${localize('dialog.medication')} .value=${this._editedRecord.medication} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, medication: (e.target as HTMLInputElement).value }; }}></ha-textfield>
                     <ha-textarea .label=${localize('dialog.notes')} .value=${this._editedRecord.note} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textarea>
                 </div>
 

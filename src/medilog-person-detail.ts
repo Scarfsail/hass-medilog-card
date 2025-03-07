@@ -109,7 +109,7 @@ export class MedilogPersonDetail extends LitElement {
                             <td>${record.datetime.format('DD.MM.YYYY HH:mm')}</td>
                             <td>${Utils.formatDurationFromTo(record.datetime)}</td>
                             <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
-                            <td>${record.pill || localize('common.none')}</td>
+                            <td>${record.medication || '-'}</td>
                         </tr>
                     `)}
                 </tbody>
@@ -127,7 +127,7 @@ export class MedilogPersonDetail extends LitElement {
         this.showRecordDetailsDialog({
             datetime: dayjs(),
             temperature: 36.7,
-            pill: '',
+            medication: '',
             note: ''
         });
     }
