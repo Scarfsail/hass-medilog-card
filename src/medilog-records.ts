@@ -14,7 +14,7 @@ dayjs.extend(duration);
 export class MedilogRecords extends LitElement {
     @property({ attribute: false }) public person?: PersonInfo
     @property({ attribute: false }) public hass?: HomeAssistant;
-    @property({ attribute: false }) public records?: MedilogRecord[];
+    @property({ attribute: false }) public records?: (MedilogRecord | null)[];
 
     static styles = css`
         .record-table {
@@ -43,6 +43,28 @@ export class MedilogRecords extends LitElement {
             background-color: var(--primary-color);
             color: var(--text-primary-color);
         }
+        
+        .day-separator {
+            cursor: default;
+            height: 16px;
+        }
+        
+        .day-separator td {
+            padding: 8px 0;
+            cursor: default;
+        }
+        
+        .day-separator hr {
+            border: none;
+            height: 1px;
+            background-color: var(--divider-color, rgba(0, 0, 0, 0.12));
+            margin: 0;
+        }
+        
+        .day-separator:hover {
+            background-color: transparent !important;
+            color: inherit !important;
+        }
     `
 
     render() {
@@ -55,6 +77,8 @@ export class MedilogRecords extends LitElement {
         }
 
         const localize = getLocalizeFunction(this.hass!);
+        const columnCount = 4; // Number of columns in the table
+        
         return html`
             <table class="record-table">
                 <thead>
@@ -66,14 +90,24 @@ export class MedilogRecords extends LitElement {
                     </tr>
                 </thead>
                 <tbody>
-                    ${this.records.map(record => html`
-                        <tr @click=${() => this.showRecordDetailsDialog(record)}>
-                            <td>${record.datetime.format('DD.MM.YYYY HH:mm')}</td>
-                            <td>${Utils.formatDurationFromTo(record.datetime)}</td>
-                            <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
-                            <td>${record.medication || '-'}</td>
-                        </tr>
-                    `)}
+                    ${this.records.map(record => 
+                        record === null
+                        ? html`
+                            <tr class="day-separator">
+                                <td colspan="${columnCount}">
+                                    <hr />
+                                </td>
+                            </tr>
+                        `
+                        : html`
+                            <tr @click=${() => this.showRecordDetailsDialog(record)}>
+                                <td>${record.datetime.format('DD.MM.YYYY HH:mm')}</td>
+                                <td>${Utils.formatDurationFromTo(record.datetime)}</td>
+                                <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
+                                <td>${record.medication || '-'}</td>
+                            </tr>
+                        `
+                    )}
                 </tbody>
             </table>
         `

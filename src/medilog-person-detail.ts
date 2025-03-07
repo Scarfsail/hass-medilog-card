@@ -68,6 +68,10 @@ export class MedilogPersonDetail extends LitElement {
         ha-button {
             margin-top: 8px;
         }
+        ha-expansion-panel {
+            margin: 4px;
+            margin-bottom: 8px;
+        }
     `
 
     render() {
@@ -81,10 +85,15 @@ export class MedilogPersonDetail extends LitElement {
         const localize = getLocalizeFunction(this.hass!);
         return html`
             <ha-button @click=${this.addNewRecord}>${localize('actions.add_record')}</ha-button>
-            <medilog-records .records=${this._records.all} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
+            ${this._records.grouped.map((group, idx) => html`
+                <ha-expansion-panel .outlined=${true} .expanded=${idx == 0} header=${group.from ? `${group.from.format('D. M. YYYY')} - ${group.to.format('D. M. YYYY')}` : group.to.format('D. M. YYYY')}>
+                    <medilog-records .records=${group.records} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
+                </ha-expansion-panel>
+            `)}
             
         `
-    }
+            //<medilog-records .records=${this._records.all} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
+        }
 
     private addNewRecord() {
         showMedilogRecordDetailDialog(this, {
