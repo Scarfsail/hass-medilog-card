@@ -8,7 +8,7 @@ import type { HomeAssistant } from "../hass-frontend/src/types";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { getLocalizeFunction } from "./localize/localize";
 import "./medilog-records"
-import { showMedilogRecordDetailDialog } from "./medilog-records";
+import { showMedilogRecordDetailDialog } from "./medilog-records-table";
 dayjs.extend(duration);
 
 @customElement("medilog-person-detail")
@@ -92,8 +92,8 @@ export class MedilogPersonDetail extends LitElement {
             `)}
             
         `
-            //<medilog-records .records=${this._records.all} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
-        }
+        //<medilog-records .records=${this._records.all} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
+    }
 
     private addNewRecord() {
         showMedilogRecordDetailDialog(this, {

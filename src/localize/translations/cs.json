@@ -4,7 +4,9 @@
     "cancel": "Zrušit",
     "delete": "Smazat",
     "duplicate": "Duplikovat",
-    "none": "Žádný"
+    "none": "Žádný",
+    "table": "Tabulka",
+    "chart": "Graf"
   },
   "dialog": {
     "edit_record": "Upravit",
