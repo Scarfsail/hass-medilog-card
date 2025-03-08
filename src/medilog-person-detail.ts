@@ -102,7 +102,7 @@ export class MedilogPersonDetail extends LitElement {
             },
             record: {
                 datetime: dayjs(),
-                temperature: 36.7,
+                temperature: undefined,
                 medication: '',
                 note: ''
             }
