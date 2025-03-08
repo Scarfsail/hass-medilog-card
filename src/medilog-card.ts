@@ -3,12 +3,13 @@ import { customElement, state } from "lit/decorators.js";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import type { LovelaceCard } from "../hass-frontend/src/panels/lovelace/types";
 import type { LovelaceCardConfig } from "../hass-frontend/src/data/lovelace/config/card";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import duration from 'dayjs/plugin/duration'
 import 'dayjs/locale/cs';
-import { PersonInfo } from "./models";
+import { PersonInfo, PersonInfoRaw } from "./models";
 import "./medilog-person-detail"
 import { sharedStyles } from "./shared-styles";
+import { convertMedilogRecordRawToMedilogRecord } from "./medilog-person-detail";
 dayjs.extend(duration);
 
 interface MedilogCardConfig extends LovelaceCardConfig {
@@ -40,17 +41,16 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         try {
             const response = await this._hass.callService('medilog', 'get_person_list', {}, {}, true, true);
             if (response && response.response.persons) {
-                this.persons = response.response.persons.map((person_id: string) => ({
-                    entity_id: person_id,
-                    name: this._hass?.states[person_id]?.attributes?.friendly_name ?? person_id
-                }));
+                this.persons = (response.response.persons as PersonInfoRaw[]).map((person) => ({
+                    entity: person.entity,
+                    name: this._hass?.states[person.entity]?.attributes?.friendly_name ?? person.entity,
+                    recent_record: convertMedilogRecordRawToMedilogRecord(person.recent_record)
+                } as PersonInfo)).sort((a,b)=>a.name.localeCompare(b.name));
                 if (!this.person) {
-                    const current_user_id = this._hass?.user?.id;
-                    // Find person entity that matches current user's ID
-                    const matchingPerson = this.persons.find(person =>
-                        person.entity_id === this._hass?.states[person.entity_id]?.attributes?.user_id
-                    );
-                    this.person = matchingPerson || this.persons[0];
+
+                    const personWithMostRecentRecord = [...this.persons].sort((a, b) => (a.recent_record?.datetime ?? 0) > (b.recent_record?.datetime ?? 0) ? -1 : 1)[0];
+
+                    this.person = personWithMostRecentRecord;
                 }
             }
         } catch (error) {
@@ -101,9 +101,10 @@ export class MedilogCard extends LitElement implements LovelaceCard {
 
         // Convert persons array to format expected by ha-combo-box
         const personItems = this.persons.map(person => ({
-            value: person.entity_id,
+            value: person.entity,
             label: person.name
         }));
+
 
         return html`
             <ha-card>
@@ -112,8 +113,8 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                         <ha-button 
                             .value=${person.value} 
                             .label=${person.label}
-                            .raised=${this.person?.entity_id === person.value}
-                            @click=${() => this.person = this.persons.find(p => p.entity_id === person.value)}
+                            .raised=${this.person?.entity === person.value}
+                            @click=${() => this.person = this.persons.find(p => p.entity === person.value)}
                         ></ha-button>`)}            
                 </div>
                 ${this.person ? html`<medilog-person-detail .person=${this.person} .hass=${this._hass}></medilog-person-detail>` : 'No person selected'}

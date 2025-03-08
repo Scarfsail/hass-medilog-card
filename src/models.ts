@@ -1,8 +1,15 @@
 import dayjs from "dayjs";
 
+
+export interface PersonInfoRaw {
+    entity: string;
+    recent_record:MedilogRecordRaw | null;
+}
+
 export interface PersonInfo {
-    entity_id: string;
+    entity: string;
     name: string;
+    recent_record: MedilogRecord | null;
 }
 
 export interface MedilogRecordRaw {

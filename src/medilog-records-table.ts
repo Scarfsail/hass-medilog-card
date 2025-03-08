@@ -115,7 +115,7 @@ export class MedilogRecordsTable extends LitElement {
     private showRecordDetailsDialog(record: MedilogRecord) {
         showMedilogRecordDetailDialog(this, {
             record: record,
-            personId: this.person?.entity_id || '',
+            personId: this.person?.entity || '',
             closed: this.dialogClosed.bind(this)
         });
     }
@@ -126,7 +126,7 @@ export class MedilogRecordsTable extends LitElement {
             this.dispatchEvent(new CustomEvent("records-changed", {
                 bubbles: true,
                 composed: true,
-                detail: { personId: this.person?.entity_id }
+                detail: { personId: this.person?.entity }
             }));
 
         }

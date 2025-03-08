@@ -3,7 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import duration from 'dayjs/plugin/duration'
 import 'dayjs/locale/cs';
-import { MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime, PersonInfo } from "./models";
+import { MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime, PersonInfo, PersonInfoRaw } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { getLocalizeFunction } from "./localize/localize";
@@ -35,17 +35,14 @@ export class MedilogPersonDetail extends LitElement {
         if (!this.hass) return;
 
         try {
-            if (!this._person || !this._person.entity_id) {
+            if (!this._person || !this._person.entity) {
                 console.warn("Cannot fetch records: person is undefined or missing entity_id");
                 return;
             }
 
-            const response = await this.hass.callService('medilog', 'get_records', { person_id: this._person.entity_id }, {}, true, true);
+            const response = await this.hass.callService('medilog', 'get_records', { person_id: this._person.entity }, {}, true, true);
             if (response && response.response.records) {
-                const records = (response.response.records as MedilogRecordRaw[]).map(record => ({
-                    ...record,
-                    datetime: dayjs(record.datetime)
-                })).sort((a, b) => b.datetime.diff(a.datetime));
+                const records = (response.response.records as MedilogRecordRaw[]).map(record => convertMedilogRecordRawToMedilogRecord(record)!).sort((a, b) => b.datetime.diff(a.datetime));
 
                 this._records = {
                     all: records,
@@ -97,7 +94,7 @@ export class MedilogPersonDetail extends LitElement {
 
     private addNewRecord() {
         showMedilogRecordDetailDialog(this, {
-            personId: this._person?.entity_id || '',
+            personId: this._person?.entity || '',
             closed: (changed) => {
                 if (changed) {
                     this.fetchRecords();
@@ -138,4 +135,14 @@ function groupRecordsByPeriods(records: MedilogRecord[]): MedilogRecordsGroupByT
     }
 
     return groups;
+}
+
+export function convertMedilogRecordRawToMedilogRecord(record: MedilogRecordRaw|null): MedilogRecord|null {
+    if (!record)
+        return null;
+
+    return {
+        ...record,
+        datetime: dayjs(record.datetime)
+    } as MedilogRecord
 }
