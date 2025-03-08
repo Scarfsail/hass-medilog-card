@@ -13,6 +13,7 @@ import { getLocalizeFunction } from "./localize/localize";
 export class MedilogRecordsTable extends LitElement {
     @property({ attribute: false }) public person?: PersonInfo
     @property({ attribute: false }) public hass?: HomeAssistant;
+    @property({ attribute: false }) public uniqueMedications?: string[]
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
 
     static styles = css`
@@ -116,6 +117,7 @@ export class MedilogRecordsTable extends LitElement {
         showMedilogRecordDetailDialog(this, {
             record: record,
             personId: this.person?.entity || '',
+            uniqueMedications: this.uniqueMedications,
             closed: this.dialogClosed.bind(this)
         });
     }

@@ -11,6 +11,7 @@ import { getLocalizeFunction } from "./localize/localize";
 export interface MedilogRecordDetailDialogParams {
     record: MedilogRecord;
     personId: string;
+    uniqueMedications?: string[];
     closed: (changed: boolean) => void;
 }
 
@@ -83,7 +84,18 @@ export class MedilogRecordDetailDialog extends LitElement {
                             <ha-button .raised=${this.doesTemperatureMatch(t, true)}  @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
                         </div>
                     </div>
-                    <ha-textfield .label=${localize('dialog.medication')} .value=${this._editedRecord.medication ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, medication: (e.target as HTMLInputElement).value }; }}></ha-textfield>
+                    <ha-combo-box
+                        .label=${localize('dialog.medication')}
+                        .value=${this._editedRecord.medication ?? ""}
+                        .items=${this._params.uniqueMedications}
+                        .itemLabelPath=${""}
+                        .itemValuePath=${""}                        
+                        .allowCustomValue=${true}
+                        class="fill field" 
+                        @value-changed=${(e: CustomEvent) => { this._editedRecord = { ...this._editedRecord!, medication: e.detail.value }; }}
+                    >
+                        
+                    </ha-combo-box>
                     <ha-textarea .label=${localize('dialog.notes')} .value=${this._editedRecord.note ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textarea>
                 </div>
 
@@ -94,7 +106,7 @@ export class MedilogRecordDetailDialog extends LitElement {
                     <ha-button slot="primaryAction" @click=${this.deleteClick} class="button-error">
                         ${localize('common.delete')}
                     </ha-button>
-
+                
                 <ha-button slot="primaryAction" @click=${this.duplicateClick}>
                     ${localize('common.duplicate')}
                 </ha-button>
