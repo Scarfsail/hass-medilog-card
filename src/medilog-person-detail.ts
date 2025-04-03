@@ -107,7 +107,8 @@ export class MedilogPersonDetail extends LitElement {
                 temperature: undefined,
                 medication: '',
                 note: ''
-            }
+            },
+            uniqueMedications: this._records?.uniqueMedications
         })
 
     }
