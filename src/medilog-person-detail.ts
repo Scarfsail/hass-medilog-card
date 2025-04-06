@@ -71,6 +71,9 @@ export class MedilogPersonDetail extends LitElement {
             margin: 4px;
             margin-bottom: 8px;
         }
+        .add-button {
+            --mdc-theme-primary: var(--success-color);
+        }
     `
 
     render() {
@@ -83,11 +86,13 @@ export class MedilogPersonDetail extends LitElement {
 
         const localize = getLocalizeFunction(this.hass!);
         return html`
-            <ha-button @click=${this.addNewRecord}>${localize('actions.add_record')}</ha-button>
+            <ha-button @click=${this.addNewRecord} class="add-button">
+                <ha-icon icon="mdi:plus"></ha-icon> ${localize('actions.add_record')}
+            </ha-button>
             ${this._records.grouped.map((group, idx) => html`
-                <ha-expansion-panel .outlined=${true} .expanded=${idx == 0} header=${group.from ? `${group.from.format('D. M. YYYY')} - ${group.to.format('D. M. YYYY')}` : group.to.format('D. M. YYYY')}>
-                    <medilog-records .records=${group.records} .uniqueMedications=${this._records?.uniqueMedications} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
-                </ha-expansion-panel>
+            <ha-expansion-panel .outlined=${true} .expanded=${idx == 0} header=${group.from ? `${group.from.format('D. M. YYYY')} - ${group.to.format('D. M. YYYY')}` : group.to.format('D. M. YYYY')}>
+            <medilog-records .records=${group.records} .uniqueMedications=${this._records?.uniqueMedications} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
+            </ha-expansion-panel>
             `)}
             
         `
