@@ -86,7 +86,7 @@ export class MedilogPersonDetail extends LitElement {
 
         const localize = getLocalizeFunction(this.hass!);
         return html`
-            <ha-button @click=${this.addNewRecord} class="add-button">
+            <ha-button .raised=${true} @click=${this.addNewRecord} class="add-button">
                 <ha-icon icon="mdi:plus"></ha-icon> ${localize('actions.add_record')}
             </ha-button>
             ${this._records.grouped.map((group, idx) => html`
