@@ -23,7 +23,7 @@ export class MedilogRecordsTable extends LitElement {
         }
         
         .record-table th {
-            text-align: left;
+            text-align: center;
             padding: 8px 16px;
             border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
             color: var(--secondary-text-color);
@@ -33,6 +33,7 @@ export class MedilogRecordsTable extends LitElement {
         .record-table td {
             padding: 8px 16px;
             border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+            text-align: center;
         }
         
         .record-table tbody tr {
@@ -65,6 +66,17 @@ export class MedilogRecordsTable extends LitElement {
             background-color: transparent !important;
             color: inherit !important;
         }
+        
+        .date-header {
+            background-color: var(--secondary-background-color, #f5f5f5);
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .date-header:hover {
+            background-color: var(--secondary-background-color, #f5f5f5) !important;
+            color: inherit !important;
+        }
     `
 
     render() {
@@ -77,37 +89,46 @@ export class MedilogRecordsTable extends LitElement {
         }
 
         const localize = getLocalizeFunction(this.hass!);
-        const columnCount = 4; // Number of columns in the table
+        const columnCount = 5; // Number of columns in the table
 
         return html`
-            <table class="record-table">
-                <thead>
-                    <tr>
-                        <th>${localize('table.datetime')}</th>
-                        <th>${localize('table.before')}</th>
-                        <th>${localize('table.temperature')}</th>
-                        <th>${localize('table.medication')}</th>
-                    </tr>
-                </thead>
+            <table class="record-table"> 
+               <thead>
+                <tr>
+                    <th><ha-icon icon="mdi:calendar"></ha-icon></th>
+                    <th><ha-icon icon="mdi:clock"></ha-icon></th>
+                    <th><ha-icon icon="mdi:timer-sand"></ha-icon></th>
+                    <th><ha-icon icon="mdi:thermometer"></ha-icon></th>
+                    <th><ha-icon icon="mdi:pill"></ha-icon></th>
+                </tr>
+            </thead>
                 <tbody>
-                    ${this.records.map(record =>
-            record === null
-                ? html`
-                    <tr class="day-separator">
-                        <td colspan="${columnCount}">
-                            <hr />
-                        </td>
-                    </tr>
-                        `
-                : html`
-                    <tr @click=${() => this.showRecordDetailsDialog(record)}>
-                        <td>${record.datetime.format('DD.MM.YYYY HH:mm')}</td>
-                        <td>${Utils.formatDurationFromTo(record.datetime)}</td>
-                        <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
-                        <td>${record.medication || '-'}</td>
-                    </tr>
-                        `
-        )}
+                    ${this.records.map((record, index) => {
+                        if (record === null) {
+                            return html`
+                                <tr class="day-separator">
+                                    <td colspan="${columnCount}">
+                                        <hr />
+                                    </td>
+                                </tr>
+                            `;
+                        }
+                        
+                        // Check if this is the first record of the day
+                        const isFirstOfDay = index === 0 || 
+                            this.records![index - 1] === null || 
+                            !record.datetime.isSame(this.records![index - 1]?.datetime, 'day');
+                        
+                        return html`
+                            <tr @click=${() => this.showRecordDetailsDialog(record)}>
+                                <td>${isFirstOfDay ? record.datetime.format('DD.MM.YYYY') : ''}</td>
+                                <td>${record.datetime.format('HH:mm')}</td>
+                                <td>${Utils.formatDurationFromTo(record.datetime)}</td>
+                                <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
+                                <td>${record.medication || '-'}</td>
+                            </tr>
+                        `;
+                    })}
                 </tbody>
             </table>
         `
