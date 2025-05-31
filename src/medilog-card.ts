@@ -148,8 +148,8 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         padding: 24px;
         box-shadow: var(--ha-card-box-shadow);
         position: relative;
-        width: fit-content;
-        max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
     }
     
 `]
