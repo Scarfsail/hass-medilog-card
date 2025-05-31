@@ -36,6 +36,10 @@ export class MedilogRecordsTable extends LitElement {
             text-align: center;
         }
         
+        .record-table tbody tr:not(.day-separator) td:first-child {
+            border-bottom: none;
+        }
+        
         .record-table tbody tr {
             cursor: pointer;
         }
@@ -47,19 +51,37 @@ export class MedilogRecordsTable extends LitElement {
         
         .day-separator {
             cursor: default;
-            height: 16px;
+            height: 32px;
         }
         
         .day-separator td {
-            padding: 8px 0;
+            padding: 24px 0;
             cursor: default;
+            position: relative;
+            border-bottom: none;
+        }
+        
+        .day-separator td:first-child {
+            border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+        }
+        
+        .day-separator td:not(:first-child) {
+            border-bottom: none;
+        }
+        
+        .day-separator td:not(:first-child):before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--divider-color) 0%, var(--divider-color) 70%, transparent 100%);
+            border-radius: 2px;
         }
         
         .day-separator hr {
-            border: none;
-            height: 1px;
-            background-color: var(--divider-color, rgba(0, 0, 0, 0.12));
-            margin: 0;
+            display: none;
         }
         
         .day-separator:hover {
@@ -68,14 +90,22 @@ export class MedilogRecordsTable extends LitElement {
         }
         
         .date-header {
-            background-color: var(--secondary-background-color, #f5f5f5);
+            background-color: var(--secondary-background-color);
             font-weight: bold;
             text-align: center;
+            padding: 12px 16px;
+            border-top: 2px solid var(--primary-color);
+            border-bottom: 1px solid var(--divider-color);
+            color: var(--primary-text-color);
         }
         
         .date-header:hover {
-            background-color: var(--secondary-background-color, #f5f5f5) !important;
-            color: inherit !important;
+            background-color: var(--secondary-background-color) !important;
+            color: var(--primary-text-color) !important;
+        }
+        
+        .record-table tbody tr:first-child .date-header {
+            border-top: none;
         }
     `
 

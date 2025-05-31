@@ -73,6 +73,19 @@ export class MedilogPersonDetail extends LitElement {
         }
         .add-button {
             --mdc-theme-primary: var(--success-color);
+            margin-bottom: 16px;
+            width: auto;
+            height: 48px;
+            font-weight: bold;
+            border-radius: 12px;
+            padding: 0 24px;
+            --mdc-button-raised-box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            --mdc-button-raised-hover-box-shadow: 0 5px 12px rgba(0,0,0,0.25);
+        }
+        
+        .add-button ha-icon {
+            margin-right: 8px;
+            --mdc-icon-size: 20px;
         }
     `
 

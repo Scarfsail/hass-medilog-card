@@ -85,10 +85,71 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     }
 
     static styles = [sharedStyles, css`
-    // add your styles here
+    ha-card {
+        overflow: visible;
+        background: var(--card-background-color);
+        box-shadow: var(--ha-card-box-shadow);
+    }
     
-    ha-button {
-        margin: 0.2rem;
+    .tabs-container {
+        display: flex;
+        margin-bottom: 0;
+        padding: 8px 16px 0;
+        position: relative;
+        background: var(--secondary-background-color);
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .tab {
+        margin: 0 2px;
+        border-radius: 12px 12px 0 0;
+        border: 2px solid var(--divider-color);
+        border-bottom: none;
+        background: var(--card-background-color);
+        color: var(--secondary-text-color);
+        position: relative;
+        transform: translateY(4px);
+        box-shadow: var(--ha-card-box-shadow);
+        transition: all 0.3s ease;
+        font-weight: 500;
+        padding: 8px 16px;
+        min-width: 100px;
+        font-size: 14px;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .tab:hover {
+        background: var(--secondary-background-color);
+        transform: translateY(2px);
+    }
+    
+    .tab.active-tab {
+        background: rgba(var(--rgb-primary-color), 0.3);
+        border-color: rgba(var(--rgb-primary-color), 0.3);
+        border-bottom: 1px solid rgba(var(--rgb-primary-color), 0.3);
+        --mdc-theme-primary: var(--primary-text-color);
+        color: var(--primary-text-color) !important;
+        font-weight: bold;
+        transform: translateY(0px);
+        z-index: 10;
+        font-size: 15px;
+    }
+    
+    .tab.active-tab:before {
+        display: none;
+    }
+    
+    .tab-content {
+        border: 2px solid rgba(var(--rgb-primary-color), 0.3);
+        border-radius: 0 12px 12px 12px;
+        background: var(--card-background-color);
+        margin-top: -1px;
+        padding: 24px;
+        box-shadow: var(--ha-card-box-shadow);
+        position: relative;
+        width: fit-content;
+        max-width: 100%;
     }
     
 `]
@@ -108,18 +169,18 @@ export class MedilogCard extends LitElement implements LovelaceCard {
 
         return html`
             <ha-card>
-                <div>
+                <div class="tabs-container">
                     ${personItems.map(person => html`
-                        <ha-button 
-                            .value=${person.value} 
-                            .label=${person.label}
-                            .raised=${this.person?.entity === person.value}
-                            @click=${() => this.person = this.persons.find(p => p.entity === person.value)}
-                        ></ha-button>`)}            
+                        <div 
+                            class="tab ${this.person?.entity === person.value ? 'active-tab' : ''}"
+                            @click=${() => {
+                                this.person = this.persons.find(p => p.entity === person.value);
+                            }}
+                        >${person.label}</div>`)}            
                 </div>
-                ${this.person ? html`<medilog-person-detail .person=${this.person} .hass=${this._hass}></medilog-person-detail>` : 'No person selected'}
-                
-
+                <div class="tab-content">
+                    ${this.person ? html`<medilog-person-detail .person=${this.person} .hass=${this._hass}></medilog-person-detail>` : 'No person selected'}
+                </div>
             </ha-card>
         `
     }
