@@ -89,15 +89,18 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         overflow: visible;
         background: var(--card-background-color);
         box-shadow: var(--ha-card-box-shadow);
+        padding: 0 16px;
     }
     
     .tabs-container {
         display: flex;
         margin-bottom: 0;
-        padding: 8px 16px 0;
+        padding: 8px 0 0;
         position: relative;
         background: var(--secondary-background-color);
         border-radius: 8px 8px 0 0;
+        margin: 0 -16px;
+        padding: 8px 16px 0;
     }
     
     .tab {
@@ -117,6 +120,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         cursor: pointer;
         user-select: none;
         flex-grow: 1;
+        text-align: center;
     }
     
     .tab:hover {
@@ -142,7 +146,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     
     .tab-content {
         border: 2px solid rgba(var(--rgb-primary-color), 0.3);
-        border-radius: 0 12px 12px 12px;
+        border-radius: 0 0 12px 12px;
         background: var(--card-background-color);
         margin-top: -1px;
         padding: 24px;
