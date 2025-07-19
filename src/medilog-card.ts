@@ -104,7 +104,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     }
     
     .tab {
-        margin: 0 2px;
+        margin: 0 -15px;
         border-radius: 12px 12px 0 0;
         border: 2px solid var(--divider-color);
         border-bottom: none;
@@ -115,12 +115,20 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         box-shadow: var(--ha-card-box-shadow);
         transition: all 0.3s ease;
         font-weight: 500;
-        padding: 20px 16px;
+        padding: 20px 25px;
         font-size: 14px;
         cursor: pointer;
         user-select: none;
         flex-grow: 1;
         text-align: center;
+    }
+    
+    .tab:first-child {
+        margin-left: 0;
+    }
+    
+    .tab:last-child {
+        margin-right: 0;
     }
     
     .tab:hover {
@@ -175,13 +183,17 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         return html`
             <ha-card>
                 <div class="tabs-container">
-                    ${personItems.map(person => html`
+                    ${personItems.map((person, index) => {
+                        const isActive = this.person?.entity === person.value;
+                        return html`
                         <div 
-                            class="tab ${this.person?.entity === person.value ? 'active-tab' : ''}"
+                            class="tab ${isActive ? 'active-tab' : ''}"
+                            style="z-index: ${isActive ? personItems.length : index};"
                             @click=${() => {
                                 this.person = this.persons.find(p => p.entity === person.value);
                             }}
-                        >${person.label}</div>`)}            
+                        >${person.label}</div>`
+                    })}            
                 </div>
                 <div class="tab-content">
                     ${this.person ? html`<medilog-person-detail .person=${this.person} .hass=${this._hass}></medilog-person-detail>` : 'No person selected'}
