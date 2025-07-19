@@ -137,11 +137,11 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     }
     
     .tab.active-tab {
-        background: rgba(var(--rgb-primary-color), 0.3);
+        background: rgb(var(--rgb-primary-color));
         border-color: rgba(var(--rgb-primary-color), 0.3);
         border-bottom: 1px solid rgba(var(--rgb-primary-color), 0.3);
         --mdc-theme-primary: var(--primary-text-color);
-        color: var(--primary-text-color) !important;
+        color: white !important;
         font-weight: bold;
         transform: translateY(0px);
         z-index: 10;
