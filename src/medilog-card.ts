@@ -146,14 +146,15 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     
     .tab-content {
         border: 2px solid rgba(var(--rgb-primary-color), 0.3);
-        border-radius: 0 0 12px 12px;
+        border-radius: 0 8px 8px 8px;
         background: var(--card-background-color);
         margin-top: -1px;
         padding: 24px;
         box-shadow: var(--ha-card-box-shadow);
         position: relative;
-        width: 100%;
         box-sizing: border-box;
+        margin-left: 0;
+        margin-right: -8px;
     }
     
 `]
