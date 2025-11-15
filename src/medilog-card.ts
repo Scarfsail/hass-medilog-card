@@ -86,7 +86,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
 
     static styles = [sharedStyles, css`
     ha-card {
-        overflow: visible;
+        overflow-x: auto;
         background: var(--card-background-color);
         box-shadow: var(--ha-card-box-shadow);
         padding: 0 16px;
@@ -163,6 +163,8 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         box-sizing: border-box;
         margin-left: 0;
         margin-right: -8px;
+        min-width: 100%;
+        width: fit-content;
     }
     
 `]
