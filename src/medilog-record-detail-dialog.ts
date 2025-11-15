@@ -115,9 +115,6 @@ export class MedilogRecordDetailDialog extends LitElement {
 
                 </div>
 
-                <ha-button slot="secondaryAction" @click=${this.closeDialog}>
-                    ${localize('common.cancel')}
-                </ha-button>
                 ${this._editedRecord.id ? html`
                     <ha-button slot="primaryAction" .variant=${"danger"} @click=${this.deleteClick} class="button-error">
                         ${localize('common.delete')}
@@ -132,7 +129,6 @@ export class MedilogRecordDetailDialog extends LitElement {
                 <ha-button slot="primaryAction" .variant=${"success"} @click=${this.saveClick}>
                     ${localize('common.save')}
                 </ha-button>
-
             </ha-dialog>
         `;
 
