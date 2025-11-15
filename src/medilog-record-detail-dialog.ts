@@ -72,16 +72,16 @@ export class MedilogRecordDetailDialog extends LitElement {
                     </div>
                     <p>
                         <strong>${localize('dialog.temperature')}:</strong> ${this._editedRecord.temperature}
-                        <ha-button @click=${() => this._editedRecord = { ...this._editedRecord!, temperature: undefined }}>X</ha-button>
+                        <ha-button .appearance=${"plain"} @click=${() => this._editedRecord = { ...this._editedRecord!, temperature: undefined }}>X</ha-button>
                     </p>
                     <div class="field">
                         <div class="temperature-buttons">
                             ${[36, 37, 38, 39, 40].map((t) => html`
-                            <ha-button .raised=${this.doesTemperatureMatch(t, false)} @click=${() => this.setTemperature(t, false)}>${t}</ha-button>`)}
+                            <ha-button .appearance=${this.doesTemperatureMatch(t, false) ? 'filled' : 'outlined'} @click=${() => this.setTemperature(t, false)}>${t}</ha-button>`)}
                         </div>
                         <div class="temperature-buttons">
                             ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((t) => html`
-                            <ha-button .raised=${this.doesTemperatureMatch(t, true)}  @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
+                            <ha-button .appearance=${this.doesTemperatureMatch(t, true) ? 'filled' : 'outlined'}  @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
                         </div>
                     </div>
                     <ha-combo-box
@@ -103,7 +103,7 @@ export class MedilogRecordDetailDialog extends LitElement {
                     ${localize('common.cancel')}
                 </ha-button>
                 ${this._editedRecord.id ? html`
-                    <ha-button slot="primaryAction" @click=${this.deleteClick} class="button-error">
+                    <ha-button slot="primaryAction" .variant=${"danger"} @click=${this.deleteClick} class="button-error">
                         ${localize('common.delete')}
                     </ha-button>
                 
@@ -113,7 +113,7 @@ export class MedilogRecordDetailDialog extends LitElement {
 
                 ` : nothing}
 
-                <ha-button slot="primaryAction" @click=${this.saveClick}>
+                <ha-button slot="primaryAction" .variant=${"success"} @click=${this.saveClick}>
                     ${localize('common.save')}
                 </ha-button>
 
