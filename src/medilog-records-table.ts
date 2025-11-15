@@ -128,8 +128,8 @@ export class MedilogRecordsTable extends LitElement {
                     <th><ha-icon icon="mdi:calendar"></ha-icon></th>
                     <th><ha-icon icon="mdi:clock"></ha-icon></th>
                     <th><ha-icon icon="mdi:timer-sand"></ha-icon></th>
-                    <th><ha-icon icon="mdi:thermometer"></ha-icon></th>
                     <th><ha-icon icon="mdi:pill"></ha-icon></th>
+                    <th><ha-icon icon="mdi:thermometer"></ha-icon></th>
                 </tr>
             </thead>
                 <tbody>
@@ -154,8 +154,8 @@ export class MedilogRecordsTable extends LitElement {
                                 <td>${isFirstOfDay ? record.datetime.format('DD.MM.YYYY') : ''}</td>
                                 <td>${record.datetime.format('HH:mm')}</td>
                                 <td>${Utils.formatDurationFromTo(record.datetime)}</td>
-                                <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
                                 <td>${record.medication || '-'}</td>
+                                <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
                             </tr>
                         `;
                     })}
