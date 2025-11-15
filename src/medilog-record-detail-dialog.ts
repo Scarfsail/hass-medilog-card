@@ -35,14 +35,22 @@ export class MedilogRecordDetailDialog extends LitElement {
             width: 100%;
         }
         .field {
-            margin-bottom: 1em;
+            margin-bottom: 5px;
         }
         .temperature-buttons{
             display: flex;
             justify-content: space-between;
-            gap:1;
-            width: 350px;
+            gap:5px;
+            width: 280px;
             flex-wrap: wrap;
+        }
+        .wrapper{
+            display: flex;   
+            flex-flow: column;
+            gap: 10px;
+        }
+        .temperature-value{
+            margin: 0px;
         }
     `]
 
@@ -70,20 +78,7 @@ export class MedilogRecordDetailDialog extends LitElement {
                             @value-changed=${(e: CustomEvent) => { this._editedRecord = { ...this._editedRecord!, datetime: dayjs(e.detail.value) } }}
                         ></ha-selector>
                     </div>
-                    <p>
-                        <strong>${localize('dialog.temperature')}:</strong> ${this._editedRecord.temperature}
-                        <ha-button .appearance=${"plain"} @click=${() => this._editedRecord = { ...this._editedRecord!, temperature: undefined }}>X</ha-button>
-                    </p>
-                    <div class="field">
-                        <div class="temperature-buttons">
-                            ${[36, 37, 38, 39, 40].map((t) => html`
-                            <ha-button .appearance=${this.doesTemperatureMatch(t, false) ? 'filled' : 'outlined'} @click=${() => this.setTemperature(t, false)}>${t}</ha-button>`)}
-                        </div>
-                        <div class="temperature-buttons">
-                            ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((t) => html`
-                            <ha-button .appearance=${this.doesTemperatureMatch(t, true) ? 'filled' : 'outlined'}  @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
-                        </div>
-                    </div>
+
                     <ha-combo-box
                         .label=${localize('dialog.medication')}
                         .value=${this._editedRecord.medication ?? ""}
@@ -91,12 +86,33 @@ export class MedilogRecordDetailDialog extends LitElement {
                         .itemLabelPath=${""}
                         .itemValuePath=${""}                        
                         .allowCustomValue=${true}
-                        class="fill field" 
+                        class="fill" 
                         @value-changed=${(e: CustomEvent) => { this._editedRecord = { ...this._editedRecord!, medication: e.detail.value }; }}
-                    >
-                        
+                    >                        
                     </ha-combo-box>
-                    <ha-textarea .label=${localize('dialog.notes')} .value=${this._editedRecord.note ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textarea>
+                    <ha-textfield .label=${localize('dialog.notes')} .value=${this._editedRecord.note ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textfield>
+                    ${this._editedRecord.temperature !== undefined ? html`
+                        <p >
+                            <strong>${localize('dialog.temperature')}:</strong> ${this._editedRecord.temperature}
+                            <ha-button .variant=${"danger"} @click=${() => this._editedRecord = { ...this._editedRecord!, temperature: undefined }}>X</ha-button>
+                        </p>
+                        <div>
+                            <div class="temperature-buttons">
+                                ${[36, 37, 38, 39, 40].map((t) => html`
+                                <ha-button .appearance=${this.doesTemperatureMatch(t, false) ? 'filled' : 'outlined'} @click=${() => this.setTemperature(t, false)}>${t}</ha-button>`)}
+                            </div>
+                            <div class="temperature-buttons">
+                                ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((t) => html`
+                                <ha-button .appearance=${this.doesTemperatureMatch(t, true) ? 'filled' : 'outlined'}  @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
+                            </div>
+                        </div>
+                    ` : html`
+                        <p class="temperature-value">
+                            <strong>${localize('dialog.temperature')}:</strong>
+                            <ha-button @click=${() => this._editedRecord = { ...this._editedRecord!, temperature: 36.7 }}>+</ha-button>
+                        </p>
+                    `}
+
                 </div>
 
                 <ha-button slot="secondaryAction" @click=${this.closeDialog}>
