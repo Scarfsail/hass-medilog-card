@@ -9,6 +9,7 @@ import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog"
 import { getLocalizeFunction } from "./localize/localize";
 import "./medilog-records"
 import { showMedilogRecordDetailDialog } from "./medilog-records-table";
+import { Utils } from "./utils";
 dayjs.extend(duration);
 
 @customElement("medilog-person-detail")
@@ -103,7 +104,7 @@ export class MedilogPersonDetail extends LitElement {
                 <ha-icon icon="mdi:plus"></ha-icon> ${localize('actions.add_record')}
             </ha-button>
             ${this._records.grouped.map((group, idx) => html`
-            <ha-expansion-panel .outlined=${true} .expanded=${idx == 0} header=${group.from ? `${group.from.format('D. M. YYYY')} - ${group.to.format('D. M. YYYY')}` : group.to.format('D. M. YYYY')}>
+            <ha-expansion-panel .outlined=${true} .expanded=${idx == 0} header=${group.from ? `${Utils.formatDate(group.from)} - ${Utils.formatDate(group.to)}` : Utils.formatDate(group.to)}>
             <medilog-records .records=${group.records} .uniqueMedications=${this._records?.uniqueMedications} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
             </ha-expansion-panel>
             `)}

@@ -116,4 +116,9 @@ export class Utils {
     public static getDate(dateTime: dayjs.Dayjs): dayjs.Dayjs {
         return dateTime.hour(0).minute(0).second(0).millisecond(0);
     }
+
+    public static formatDate(date: dayjs.Dayjs | Date, omitYearIfItsThisYear = true, addSpacesAfterDots = true): string {
+        const dot = addSpacesAfterDots ? '. ' : '.';
+        return dayjs(date).format(`D${dot}M${omitYearIfItsThisYear && dayjs(date).year() === dayjs().year() ? '' : `${dot}YYYY`}`)
+    }
 }

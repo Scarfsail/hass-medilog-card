@@ -151,7 +151,7 @@ export class MedilogRecordsTable extends LitElement {
                         
                         return html`
                             <tr @click=${() => this.showRecordDetailsDialog(record)}>
-                                <td>${isFirstOfDay ? record.datetime.format('DD.MM.YYYY') : ''}</td>
+                                <td>${isFirstOfDay ? Utils.formatDate(record.datetime,true, false) : ''}</td>
                                 <td>${record.datetime.format('HH:mm')}</td>
                                 <td>${Utils.formatDurationFromTo(record.datetime)}</td>
                                 <td>${record.medication || '-'}</td>
