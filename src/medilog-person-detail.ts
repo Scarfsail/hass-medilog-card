@@ -164,6 +164,7 @@ export function convertMedilogRecordRawToMedilogRecord(record: MedilogRecordRaw 
 
     return {
         ...record,
+        temperature:record.temperature === null ? undefined : record.temperature,
         datetime: dayjs(record.datetime)
     } as MedilogRecord
 }
