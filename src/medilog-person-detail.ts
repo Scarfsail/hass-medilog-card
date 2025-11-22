@@ -8,6 +8,7 @@ import type { HomeAssistant } from "../hass-frontend/src/types";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { getLocalizeFunction } from "./localize/localize";
 import "./medilog-records"
+import "./medilog-records-medications"
 import { showMedilogRecordDetailDialog } from "./medilog-records-table";
 import { Utils } from "./utils";
 dayjs.extend(duration);
@@ -27,6 +28,7 @@ export class MedilogPersonDetail extends LitElement {
         grouped: MedilogRecordsGroupByTime[]
         uniqueMedications: string[]
     };
+    @state() private viewMode: 'timeline' | 'medications' = 'timeline';
 
     connectedCallback() {
         super.connectedCallback();
@@ -63,7 +65,18 @@ export class MedilogPersonDetail extends LitElement {
     }
 
     static styles = css`
-       
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 4px;
+            flex: 1;
+        }
         
         ha-button {
             margin-top: 8px;
@@ -74,7 +87,6 @@ export class MedilogPersonDetail extends LitElement {
         }
         .add-button {
             --mdc-theme-primary: var(--success-color);
-            margin-bottom: 16px;
             width: auto;
             height: 48px;
             font-weight: bold;
@@ -100,17 +112,30 @@ export class MedilogPersonDetail extends LitElement {
 
         const localize = getLocalizeFunction(this.hass!);
         return html`
-            <ha-button @click=${this.addNewRecord} class="add-button">
-                <ha-icon icon="mdi:plus"></ha-icon> ${localize('actions.add_record')}
-            </ha-button>
-            ${this._records.grouped.map((group, idx) => html`
-            <ha-expansion-panel .outlined=${true} .expanded=${idx == 0} header=${group.from ? `${Utils.formatDate(group.from)} - ${Utils.formatDate(group.to)}` : Utils.formatDate(group.to)}>
-            <medilog-records .records=${group.records} .uniqueMedications=${this._records?.uniqueMedications} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
-            </ha-expansion-panel>
-            `)}
+            <div class="controls">
+                <div class="view-toggle">
+                    <ha-button .appearance=${this.viewMode === 'timeline' ? 'filled' : 'outlined'} @click=${() => this.viewMode = 'timeline'}>
+                        <ha-icon icon="mdi:timeline-clock"></ha-icon>
+                    </ha-button>
+                    <ha-button .appearance=${this.viewMode === 'medications' ? 'filled' : 'outlined'} @click=${() => this.viewMode = 'medications'}>
+                        <ha-icon icon="mdi:pill-multiple"></ha-icon>
+                    </ha-button>
+                </div>
+                <ha-button @click=${this.addNewRecord} class="add-button">
+                    <ha-icon icon="mdi:plus"></ha-icon> ${localize('actions.add_record')}
+                </ha-button>
+            </div>
             
+            ${this.viewMode === 'timeline' ? html`
+                ${this._records.grouped.map((group, idx) => html`
+                    <ha-expansion-panel .outlined=${true} .expanded=${idx == 0} header=${group.from ? `${Utils.formatDate(group.from)} - ${Utils.formatDate(group.to)}` : Utils.formatDate(group.to)}>
+                        <medilog-records .records=${group.records} .uniqueMedications=${this._records?.uniqueMedications} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
+                    </ha-expansion-panel>
+                `)}
+            ` : html`
+                <medilog-records-medications .records=${this._records.all} .hass=${this.hass} .person=${this._person}></medilog-records-medications>
+            `}
         `
-        //<medilog-records .records=${this._records.all} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
     }
 
     private addNewRecord() {

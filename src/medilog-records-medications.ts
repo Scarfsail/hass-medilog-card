@@ -1,0 +1,502 @@
+import { LitElement, css, html } from "lit-element"
+import { customElement, property, state } from "lit/decorators.js";
+import dayjs from "dayjs";
+import { MedilogRecord, PersonInfo } from "./models";
+import type { HomeAssistant } from "../hass-frontend/src/types";
+import { getLocalizeFunction } from "./localize/localize";
+
+type DrillDownLevel = 'year' | 'month' | 'day' | 'hour';
+
+interface MedicationStats {
+    medication: string;
+    counts: Map<string, number>; // key: time period, value: count
+}
+
+interface DrillDownState {
+    level: DrillDownLevel;
+    year?: number;
+    month?: number;
+    day?: number;
+}
+
+@customElement("medilog-records-medications")
+export class MedilogRecordsMedications extends LitElement {
+    @property({ attribute: false }) public person?: PersonInfo
+    @property({ attribute: false }) public hass?: HomeAssistant;
+    @property({ attribute: false }) public records?: (MedilogRecord | null)[];
+
+    @state() private drillDownState: DrillDownState = { level: 'year' };
+    @state() private selectedMedication?: string;
+
+    connectedCallback() {
+        super.connectedCallback();
+        window.addEventListener('popstate', this.handlePopState);
+        this.restoreStateFromUrl();
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        window.removeEventListener('popstate', this.handlePopState);
+    }
+
+    private handlePopState = (event: PopStateEvent) => {
+        if (event.state?.medicationsDrillDown) {
+            this.drillDownState = event.state.medicationsDrillDown;
+            this.requestUpdate();
+        } else {
+            this.drillDownState = { level: 'year' };
+            this.requestUpdate();
+        }
+    }
+
+    private restoreStateFromUrl() {
+        const state = history.state;
+        if (state?.medicationsDrillDown) {
+            this.drillDownState = state.medicationsDrillDown;
+        }
+    }
+
+    private pushState(newState: DrillDownState) {
+        history.pushState(
+            { medicationsDrillDown: newState },
+            '',
+            window.location.pathname + window.location.search
+        );
+    }
+
+    static styles = css`
+        .medications-container {
+            padding: 16px 0;
+        }
+
+        .controls {
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .breadcrumb {
+            color: var(--secondary-text-color);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .breadcrumb-item {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .breadcrumb-item:hover {
+            background-color: var(--secondary-background-color);
+            color: var(--primary-color);
+        }
+
+        .breadcrumb-item.current {
+            cursor: default;
+            font-weight: 500;
+            color: var(--primary-text-color);
+        }
+
+        .breadcrumb-item.current:hover {
+            background-color: transparent;
+            color: var(--primary-text-color);
+        }
+
+        .breadcrumb-separator {
+            color: var(--disabled-text-color);
+            margin: 0 4px;
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow-x: auto;
+            display: block;
+        }
+
+        .matrix-table table {
+            width: 100%;
+            min-width: 600px;
+        }
+
+        .matrix-table th,
+        .matrix-table td {
+            padding: 8px 4px;
+            text-align: center;
+            border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+            white-space: nowrap;
+        }
+
+        .matrix-table th {
+            background-color: var(--secondary-background-color);
+            color: var(--secondary-text-color);
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .matrix-table th.medication-header {
+            text-align: left;
+            width: 1%;
+            white-space: nowrap;
+            left: 0;
+            z-index: 11;
+            padding: 8px;
+        }
+
+        .matrix-table td.medication-name {
+            text-align: left;
+            font-weight: 500;
+            background-color: var(--card-background-color);
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            width: 1%;
+            white-space: nowrap;
+            padding: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .matrix-table td.medication-name:hover {
+            background-color: var(--secondary-background-color);
+        }
+
+        .matrix-table td.count-cell {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 12px 8px;
+        }
+
+        .matrix-table td.count-cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .matrix-table td.count-cell.empty {
+            background-color: var(--disabled-color, rgba(0, 0, 0, 0.05));
+            color: var(--disabled-text-color, rgba(0, 0, 0, 0.3));
+            cursor: default;
+        }
+
+        .matrix-table td.count-cell.empty:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .matrix-table tr.highlighted {
+            opacity: 0.8;
+        }
+
+        .matrix-table tr.highlighted td.medication-name {
+            background-color: var(--primary-color);
+            color: var(--text-primary-color);
+            opacity: 0.9;
+        }
+
+        .count-cell-content {
+            display: inline-block;
+            min-width: 1.5em;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 32px;
+            color: var(--secondary-text-color);
+        }
+    `
+
+    render() {
+        const localize = getLocalizeFunction(this.hass!);
+        
+        if (!this.person) {
+            return html`<div class="no-data">${localize('medications.person_not_defined')}</div>`;
+        }
+
+        if (!this.records) {
+            return html`<ha-circular-progress active></ha-circular-progress>`;
+        }
+
+        const filteredRecords = this.records.filter(r => r !== null) as MedilogRecord[];
+        
+        if (filteredRecords.length === 0) {
+            return html`<div class="no-data">${localize('medications.no_data')}</div>`;
+        }
+
+        const stats = this.calculateStats(filteredRecords);
+        const columns = this.getColumns(filteredRecords);
+        const maxCount = this.getMaxCount(stats);
+
+        return html`
+            <div class="medications-container">
+                <div class="controls">
+                    <div class="breadcrumb">
+                        ${this.renderBreadcrumb()}
+                    </div>
+                </div>
+                
+                <div class="matrix-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="medication-header">${localize('medications.medication_column')}</th>
+                                ${columns.map(col => html`<th>${col.label}</th>`)}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${stats.map(stat => html`
+                                <tr class="${this.selectedMedication === stat.medication ? 'highlighted' : ''}">
+                                    <td class="medication-name" @click=${() => this.toggleMedicationHighlight(stat.medication)}>${stat.medication}</td>
+                                    ${columns.map(col => {
+                                        const count = stat.counts.get(col.key) || 0;
+                                        const isEmpty = count === 0;
+                                        return html`
+                                            <td 
+                                                class="count-cell ${isEmpty ? 'empty' : ''}"
+                                                style="${!isEmpty ? this.getHeatMapStyle(count, maxCount) : ''}"
+                                                @click=${() => this.handleCellClick(col.key, stat.medication)}
+                                            >
+                                                <div class="count-cell-content">
+                                                    ${isEmpty ? '' : count}
+                                                </div>
+                                            </td>
+                                        `;
+                                    })}
+                                </tr>
+                            `)}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    private renderBreadcrumb() {
+        const localize = getLocalizeFunction(this.hass!);
+        const { level, year, month, day } = this.drillDownState;
+        const items: Array<{ label: string; level: DrillDownLevel; state: Partial<DrillDownState> }> = [];
+        
+        // Build breadcrumb items based on current level
+        items.push({ label: localize('medications.all_years'), level: 'year', state: { level: 'year' } });
+        
+        if (year !== undefined) {
+            items.push({ label: `${localize('medications.year')} ${year}`, level: 'month', state: { level: 'month', year } });
+        }
+        
+        if (month !== undefined) {
+            items.push({ label: `${localize('medications.month')} ${month}`, level: 'day', state: { level: 'day', year, month } });
+        }
+        
+        if (day !== undefined) {
+            items.push({ label: `${localize('medications.day')} ${day}`, level: 'hour', state: { level: 'hour', year, month, day } });
+        }
+
+        return html`
+            ${items.map((item, index) => {
+                const isLast = index === items.length - 1;
+                const isCurrent = item.level === level;
+                
+                return html`
+                    <span 
+                        class="breadcrumb-item ${isCurrent ? 'current' : ''}"
+                        @click=${() => !isCurrent && this.navigateToLevel(item.state)}
+                    >
+                        ${item.label}
+                    </span>
+                    ${!isLast ? html`<span class="breadcrumb-separator">›</span>` : ''}
+                `;
+            })}
+        `;
+    }
+
+    private calculateStats(records: MedilogRecord[]): MedicationStats[] {
+        const medicationMap = new Map<string, Map<string, number>>();
+
+        // Filter records based on current drill-down state
+        const filteredRecords = records.filter(record => {
+            if (!record.medication) return false;
+
+            const { level, year, month, day } = this.drillDownState;
+
+            if (level === 'month' && year !== undefined) {
+                return record.datetime.year() === year;
+            }
+            if (level === 'day' && year !== undefined && month !== undefined) {
+                return record.datetime.year() === year && record.datetime.month() + 1 === month;
+            }
+            if (level === 'hour' && year !== undefined && month !== undefined && day !== undefined) {
+                return record.datetime.year() === year && 
+                       record.datetime.month() + 1 === month && 
+                       record.datetime.date() === day;
+            }
+
+            return true;
+        });
+
+        // Group by medication and time period
+        filteredRecords.forEach(record => {
+            if (!record.medication) return;
+
+            if (!medicationMap.has(record.medication)) {
+                medicationMap.set(record.medication, new Map());
+            }
+
+            const counts = medicationMap.get(record.medication)!;
+            const key = this.getTimeKey(record.datetime);
+            counts.set(key, (counts.get(key) || 0) + 1);
+        });
+
+        // Convert to array and sort by medication name
+        const stats: MedicationStats[] = Array.from(medicationMap.entries())
+            .map(([medication, counts]) => ({ medication, counts }))
+            .sort((a, b) => a.medication.localeCompare(b.medication));
+
+        return stats;
+    }
+
+    private getTimeKey(datetime: dayjs.Dayjs): string {
+        const { level } = this.drillDownState;
+
+        switch (level) {
+            case 'year':
+                return datetime.year().toString();
+            case 'month':
+                return (datetime.month() + 1).toString();
+            case 'day':
+                return datetime.date().toString();
+            case 'hour':
+                return datetime.hour().toString();
+            default:
+                return '';
+        }
+    }
+
+    private getColumns(records: MedilogRecord[]): Array<{ key: string; label: string }> {
+        const { level, year, month, day } = this.drillDownState;
+
+        switch (level) {
+            case 'year': {
+                const years = new Set<number>();
+                records.forEach(r => years.add(r.datetime.year()));
+                const yearArray = Array.from(years).sort();
+                return yearArray.map(y => ({
+                    key: y.toString(),
+                    label: y.toString().slice(-2) // Show last 2 digits: 23, 24, 25
+                }));
+            }
+            case 'month': {
+                return Array.from({ length: 12 }, (_, i) => ({
+                    key: (i + 1).toString(),
+                    label: (i + 1).toString()
+                }));
+            }
+            case 'day': {
+                if (year === undefined || month === undefined) return [];
+                const daysInMonth = dayjs(`${year}-${month}-01`).daysInMonth();
+                return Array.from({ length: daysInMonth }, (_, i) => ({
+                    key: (i + 1).toString(),
+                    label: (i + 1).toString()
+                }));
+            }
+            case 'hour': {
+                return Array.from({ length: 24 }, (_, i) => ({
+                    key: i.toString(),
+                    label: i.toString()
+                }));
+            }
+            default:
+                return [];
+        }
+    }
+
+    private getMaxCount(stats: MedicationStats[]): number {
+        let max = 0;
+        stats.forEach(stat => {
+            stat.counts.forEach(count => {
+                if (count > max) max = count;
+            });
+        });
+        return max;
+    }
+
+    private getHeatMapStyle(count: number, maxCount: number): string {
+        if (maxCount === 0) return '';
+        
+        const intensity = count / maxCount;
+        
+        // Use CSS custom properties with fallback
+        // Darker, more saturated colors for better visibility
+        const hue = 210; // Blue hue
+        const saturation = 60 + (intensity * 40); // 60% to 100%
+        const lightness = 65 - (intensity * 45); // 65% to 20%
+        
+        return `background-color: hsl(${hue}, ${saturation}%, ${lightness}%); color: ${intensity > 0.3 ? 'white' : 'var(--primary-text-color)'};`;
+    }
+
+    private drillDown(key: string) {
+        const { level, year, month } = this.drillDownState;
+
+        switch (level) {
+            case 'year':
+                this.drillDownState = { level: 'month', year: parseInt(key) };
+                break;
+            case 'month':
+                this.drillDownState = { level: 'day', year, month: parseInt(key) };
+                break;
+            case 'day':
+                this.drillDownState = { level: 'hour', year, month, day: parseInt(key) };
+                break;
+            case 'hour':
+                // Already at the deepest level
+                return;
+        }
+
+        this.pushState(this.drillDownState);
+        this.requestUpdate();
+    }
+
+    private goBack() {
+        const { level, year, month } = this.drillDownState;
+
+        switch (level) {
+            case 'month':
+                this.drillDownState = { level: 'year' };
+                break;
+            case 'day':
+                this.drillDownState = { level: 'month', year };
+                break;
+            case 'hour':
+                this.drillDownState = { level: 'day', year, month };
+                break;
+        }
+
+        this.pushState(this.drillDownState);
+        this.requestUpdate();
+    }
+
+    private navigateToLevel(state: Partial<DrillDownState>) {
+        this.drillDownState = state as DrillDownState;
+        this.pushState(this.drillDownState);
+        this.requestUpdate();
+    }
+
+    private toggleMedicationHighlight(medication: string) {
+        if (this.selectedMedication === medication) {
+            this.selectedMedication = undefined;
+        } else {
+            this.selectedMedication = medication;
+        }
+    }
+
+    private handleCellClick(key: string, medication: string) {
+        this.selectedMedication = medication;
+        this.drillDown(key);
+    }
+}

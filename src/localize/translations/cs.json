@@ -24,5 +24,15 @@
   },
   "actions": {
     "add_record": "Přidat nový záznam"
+  },
+  "medications": {
+    "all_years": "Všechny roky",
+    "year": "Rok",
+    "month": "Měsíc",
+    "day": "Den",
+    "back": "Zpět",
+    "medication_column": "Lék",
+    "no_data": "Žádné záznamy léků k dispozici",
+    "person_not_defined": "Osoba není definována"
   }
 }
