@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import { MedilogRecord, PersonInfo } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { getLocalizeFunction } from "./localize/localize";
+import "./medilog-records-table";
 
 type DrillDownLevel = 'year' | 'month' | 'day' | 'hour';
 
@@ -139,7 +140,16 @@ export class MedilogRecordsMedications extends LitElement {
             font-weight: 500;
             position: sticky;
             top: 0;
-            z-index: 10;
+            z-index: 2;
+        }
+
+        .matrix-table th.period-header {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .matrix-table th.period-header:hover {
+            background-color: var(--divider-color);
         }
 
         .matrix-table th.medication-header {
@@ -147,7 +157,7 @@ export class MedilogRecordsMedications extends LitElement {
             width: 1%;
             white-space: nowrap;
             left: 0;
-            z-index: 11;
+            z-index: 3;
             padding: 8px;
         }
 
@@ -157,7 +167,7 @@ export class MedilogRecordsMedications extends LitElement {
             background-color: var(--card-background-color);
             position: sticky;
             left: 0;
-            z-index: 5;
+            z-index: 1;
             width: 1%;
             white-space: nowrap;
             padding: 8px;
@@ -211,6 +221,19 @@ export class MedilogRecordsMedications extends LitElement {
             padding: 32px;
             color: var(--secondary-text-color);
         }
+
+        .filtered-records {
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 2px solid var(--divider-color);
+        }
+
+        .filtered-records-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: var(--primary-text-color);
+        }
     `
 
     render() {
@@ -247,7 +270,7 @@ export class MedilogRecordsMedications extends LitElement {
                         <thead>
                             <tr>
                                 <th class="medication-header">${localize('medications.medication_column')}</th>
-                                ${columns.map(col => html`<th>${col.label}</th>`)}
+                                ${columns.map(col => html`<th class="${this.drillDownState.level !== 'hour' ? 'period-header' : ''}" @click=${() => this.drillDownState.level !== 'hour' && this.drillDownAll(col.key)}>${col.label}</th>`)}
                             </tr>
                         </thead>
                         <tbody>
@@ -274,6 +297,19 @@ export class MedilogRecordsMedications extends LitElement {
                         </tbody>
                     </table>
                 </div>
+
+                ${this.selectedMedication ? html`
+                    <div class="filtered-records">
+                        <div class="filtered-records-title">
+                            ${this.selectedMedication} - ${this.renderFilteredRecordsTitle(localize)}
+                        </div>
+                        <medilog-records-table 
+                            .records=${this.getFilteredRecords()} 
+                            .hass=${this.hass} 
+                            .person=${this.person}
+                        ></medilog-records-table>
+                    </div>
+                ` : ''}
             </div>
         `;
     }
@@ -498,5 +534,70 @@ export class MedilogRecordsMedications extends LitElement {
     private handleCellClick(key: string, medication: string) {
         this.selectedMedication = medication;
         this.drillDown(key);
+    }
+
+    private drillDownAll(key: string) {
+        // Don't clear selection when drilling down via header - check if medication exists in new view
+        const currentMedication = this.selectedMedication;
+        this.drillDown(key);
+        
+        // After drill down, check if the selected medication still has records in the new view
+        if (currentMedication) {
+            const filteredRecords = this.getFilteredRecordsForMedication(currentMedication);
+            if (filteredRecords.length > 0) {
+                this.selectedMedication = currentMedication;
+            } else {
+                this.selectedMedication = undefined;
+            }
+        }
+    }
+
+    private getFilteredRecordsForMedication(medication: string): MedilogRecord[] {
+        if (!this.records) return [];
+
+        const filteredRecords = this.records.filter(r => r !== null) as MedilogRecord[];
+        const { level, year, month, day } = this.drillDownState;
+
+        return filteredRecords.filter(record => {
+            // Filter by medication
+            if (record.medication !== medication) return false;
+
+            // Filter by time period based on drill-down level
+            if (level === 'month' && year !== undefined) {
+                return record.datetime.year() === year;
+            }
+            if (level === 'day' && year !== undefined && month !== undefined) {
+                return record.datetime.year() === year && record.datetime.month() + 1 === month;
+            }
+            if (level === 'hour' && year !== undefined && month !== undefined && day !== undefined) {
+                return record.datetime.year() === year && 
+                       record.datetime.month() + 1 === month && 
+                       record.datetime.date() === day;
+            }
+
+            return true;
+        });
+    }
+
+    private getFilteredRecords(): MedilogRecord[] {
+        if (!this.records || !this.selectedMedication) return [];
+        return this.getFilteredRecordsForMedication(this.selectedMedication);
+    }
+
+    private renderFilteredRecordsTitle(localize: (key: string) => string): string {
+        const { level, year, month, day } = this.drillDownState;
+
+        switch (level) {
+            case 'year':
+                return localize('medications.all_years');
+            case 'month':
+                return `${localize('medications.year')} ${year}`;
+            case 'day':
+                return `${localize('medications.year')} ${year}, ${localize('medications.month')} ${month}`;
+            case 'hour':
+                return `${localize('medications.year')} ${year}, ${localize('medications.month')} ${month}, ${localize('medications.day')} ${day}`;
+            default:
+                return '';
+        }
     }
 }

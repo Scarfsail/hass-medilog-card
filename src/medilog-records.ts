@@ -14,7 +14,7 @@ export class MedilogRecords extends LitElement {
     @property({ attribute: false }) public uniqueMedications?: string[]
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
-    @state() private visualization: 'chart' | 'table' | 'medications' = 'table';
+    @state() private visualization: 'chart' | 'table' = 'table';
 
     static styles = css`
     
@@ -34,14 +34,13 @@ export class MedilogRecords extends LitElement {
             <div>
                 <ha-button .appearance=${this.visualization == 'table' ? 'filled' : 'outlined'} @click=${() => this.visualization = 'table'}><ha-icon icon="mdi:table"></ha-icon></ha-button>            
                 <ha-button .appearance=${this.visualization == 'chart' ? 'filled' : 'outlined'} @click=${() => this.visualization = 'chart'}><ha-icon icon="mdi:chart-line"></ha-icon></ha-button>
-                <ha-button .appearance=${this.visualization == 'medications' ? 'filled' : 'outlined'} @click=${() => this.visualization = 'medications'}><ha-icon icon="mdi:pill-multiple"></ha-icon></ha-button>
             </div>
             
             ${this.visualization === 'table'
                 ? html`<medilog-records-table .records=${this.records} .hass=${this.hass} .person=${this.person} .uniqueMedications=${this.uniqueMedications}></medilog-records-table>`
                 : this.visualization === 'chart'
                 ? html`<medilog-records-chart .records=${this.records}></medilog-records-chart>`
-                : html`<medilog-records-medications .records=${this.records} .hass=${this.hass} .person=${this.person}></medilog-records-medications>`
+                : html`<div>Unknown visualization: ${this.visualization}</div>`
             }
         `;
     }
