@@ -154,7 +154,7 @@ export class MedilogRecordsTable extends LitElement {
                                 <td>${isFirstOfDay ? Utils.formatDate(record.datetime,true, false) : ''}</td>
                                 <td>${record.datetime.format('HH:mm')}</td>
                                 <td>${Utils.formatDurationFromTo(record.datetime)}</td>
-                                <td>${record.medication || '-'}</td>
+                                <td>${record.medication ? `${record.medication}${record.medication_amount && record.medication_amount > 1 ? ` (${record.medication_amount})` : ''}` : '-'}</td>
                                 <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
                             </tr>
                         `;

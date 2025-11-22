@@ -37,6 +37,17 @@ export class MedilogRecordDetailDialog extends LitElement {
         .field {
             margin-bottom: 5px;
         }
+        .medication-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .medication-row ha-combo-box {
+            flex: 1;
+        }
+        .medication-row ha-textfield {
+            width: 120px;
+        }
         .temperature-buttons{
             display: flex;
             justify-content: space-between;
@@ -79,17 +90,34 @@ export class MedilogRecordDetailDialog extends LitElement {
                         ></ha-selector>
                     </div>
 
-                    <ha-combo-box
-                        .label=${localize('dialog.medication')}
-                        .value=${this._editedRecord.medication ?? ""}
-                        .items=${this._params.uniqueMedications}
-                        .itemLabelPath=${""}
-                        .itemValuePath=${""}                        
-                        .allowCustomValue=${true}
-                        class="fill" 
-                        @value-changed=${(e: CustomEvent) => { this._editedRecord = { ...this._editedRecord!, medication: e.detail.value }; }}
-                    >                        
-                    </ha-combo-box>
+                    <div class="medication-row">
+                        <ha-combo-box
+                            .label=${localize('dialog.medication')}
+                            .value=${this._editedRecord.medication ?? ""}
+                            .items=${this._params.uniqueMedications}
+                            .itemLabelPath=${""}
+                            .itemValuePath=${""}
+                            .allowCustomValue=${true}
+                            @value-changed=${(e: CustomEvent) => { 
+                                const medication = e.detail.value;
+                                this._editedRecord = { 
+                                    ...this._editedRecord!, 
+                                    medication: medication,
+                                    medication_amount: medication ? (this._editedRecord!.medication_amount ?? 1) : undefined
+                                }; 
+                            }}
+                        >                        
+                        </ha-combo-box>
+                        <ha-textfield
+                            .label=${localize('dialog.medication_amount')}
+                            .value=${this._editedRecord.medication_amount ?? ""}
+                            type="number"
+                            @change=${(e: Event) => { 
+                                const value = (e.target as HTMLInputElement).value;
+                                this._editedRecord = { ...this._editedRecord!, medication_amount: value ? parseFloat(value) : undefined }; 
+                            }}
+                        ></ha-textfield>
+                    </div>
                     <ha-textfield .label=${localize('dialog.notes')} .value=${this._editedRecord.note ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textfield>
                     ${this._editedRecord.temperature !== undefined ? html`
                         <p >

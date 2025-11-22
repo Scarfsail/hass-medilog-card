@@ -17,6 +17,7 @@ export interface MedilogRecordRaw {
     datetime: string;
     temperature?: number;
     medication?: string;
+    medication_amount?: number;
     note?: string;
 }
 
@@ -25,6 +26,7 @@ export interface MedilogRecord {
     datetime: dayjs.Dayjs;
     temperature?: number;
     medication?: string;
+    medication_amount?: number;
     note?: string;
 }
 export interface MedilogRecordsGroupByTime {

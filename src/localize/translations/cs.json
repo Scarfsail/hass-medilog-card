@@ -13,6 +13,7 @@
     "new_record": "Nový záznam",
     "temperature": "Teplota",
     "medication": "Lék",
+    "medication_amount": "Množství",
     "notes": "Poznámky",
     "delete_confirm": "Opravdu chcete smazat tento záznam?"
   },
