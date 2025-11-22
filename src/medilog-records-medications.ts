@@ -27,7 +27,10 @@ export class MedilogRecordsMedications extends LitElement {
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
 
     @state() private drillDownState: DrillDownState = { level: 'year' };
-    @state() private selectedMedication?: string;
+    @state() private selectedMedications: Set<string> = new Set();
+    
+    private longPressTimer?: number;
+    private readonly longPressDuration = 500; // ms
 
     connectedCallback() {
         super.connectedCallback();
@@ -38,6 +41,9 @@ export class MedilogRecordsMedications extends LitElement {
     disconnectedCallback() {
         super.disconnectedCallback();
         window.removeEventListener('popstate', this.handlePopState);
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+        }
     }
 
     private handlePopState = (event: PopStateEvent) => {
@@ -275,8 +281,13 @@ export class MedilogRecordsMedications extends LitElement {
                         </thead>
                         <tbody>
                             ${stats.map(stat => html`
-                                <tr class="${this.selectedMedication === stat.medication ? 'highlighted' : ''}">
-                                    <td class="medication-name" @click=${() => this.toggleMedicationHighlight(stat.medication)}>${stat.medication}</td>
+                                <tr class="${this.selectedMedications.has(stat.medication) ? 'highlighted' : ''}">
+                                    <td class="medication-name" 
+                                        @click=${(e: MouseEvent) => this.handleMedicationClick(e, stat.medication)}
+                                        @touchstart=${(e: TouchEvent) => this.handleTouchStart(e, stat.medication)}
+                                        @touchend=${() => this.handleTouchEnd()}
+                                        @touchcancel=${() => this.handleTouchEnd()}
+                                    >${stat.medication}</td>
                                     ${columns.map(col => {
                                         const count = stat.counts.get(col.key) || 0;
                                         const isEmpty = count === 0;
@@ -298,10 +309,10 @@ export class MedilogRecordsMedications extends LitElement {
                     </table>
                 </div>
 
-                ${this.selectedMedication ? html`
+                ${this.selectedMedications.size > 0 ? html`
                     <div class="filtered-records">
                         <div class="filtered-records-title">
-                            ${this.selectedMedication} - ${this.renderFilteredRecordsTitle(localize)}
+                            ${Array.from(this.selectedMedications).join(', ')} - ${this.renderFilteredRecordsTitle(localize)}
                         </div>
                         <medilog-records-table 
                             .records=${this.getFilteredRecords()} 
@@ -523,32 +534,70 @@ export class MedilogRecordsMedications extends LitElement {
         this.requestUpdate();
     }
 
-    private toggleMedicationHighlight(medication: string) {
-        if (this.selectedMedication === medication) {
-            this.selectedMedication = undefined;
+    private handleMedicationClick(event: MouseEvent, medication: string) {
+        if (event.ctrlKey || event.metaKey) {
+            // Multi-select with Ctrl/Cmd key
+            if (this.selectedMedications.has(medication)) {
+                this.selectedMedications.delete(medication);
+            } else {
+                this.selectedMedications.add(medication);
+            }
         } else {
-            this.selectedMedication = medication;
+            // Single select - toggle if already selected, otherwise clear others
+            if (this.selectedMedications.size === 1 && this.selectedMedications.has(medication)) {
+                this.selectedMedications.clear();
+            } else {
+                this.selectedMedications.clear();
+                this.selectedMedications.add(medication);
+            }
+        }
+        this.requestUpdate();
+    }
+
+    private handleTouchStart(event: TouchEvent, medication: string) {
+        this.longPressTimer = window.setTimeout(() => {
+            // Long press enables multi-select mode
+            if (this.selectedMedications.has(medication)) {
+                this.selectedMedications.delete(medication);
+            } else {
+                this.selectedMedications.add(medication);
+            }
+            this.requestUpdate();
+            // Provide haptic feedback if available
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }, this.longPressDuration);
+    }
+
+    private handleTouchEnd() {
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = undefined;
         }
     }
 
     private handleCellClick(key: string, medication: string) {
-        this.selectedMedication = medication;
+        this.selectedMedications.clear();
+        this.selectedMedications.add(medication);
         this.drillDown(key);
     }
 
     private drillDownAll(key: string) {
-        // Don't clear selection when drilling down via header - check if medication exists in new view
-        const currentMedication = this.selectedMedication;
+        // Don't clear selection when drilling down via header - check if medications exist in new view
+        const currentMedications = new Set(this.selectedMedications);
         this.drillDown(key);
         
-        // After drill down, check if the selected medication still has records in the new view
-        if (currentMedication) {
-            const filteredRecords = this.getFilteredRecordsForMedication(currentMedication);
-            if (filteredRecords.length > 0) {
-                this.selectedMedication = currentMedication;
-            } else {
-                this.selectedMedication = undefined;
-            }
+        // After drill down, check if the selected medications still have records in the new view
+        if (currentMedications.size > 0) {
+            const medicationsToKeep = new Set<string>();
+            currentMedications.forEach(medication => {
+                const filteredRecords = this.getFilteredRecordsForMedication(medication);
+                if (filteredRecords.length > 0) {
+                    medicationsToKeep.add(medication);
+                }
+            });
+            this.selectedMedications = medicationsToKeep;
         }
     }
 
@@ -580,8 +629,15 @@ export class MedilogRecordsMedications extends LitElement {
     }
 
     private getFilteredRecords(): MedilogRecord[] {
-        if (!this.records || !this.selectedMedication) return [];
-        return this.getFilteredRecordsForMedication(this.selectedMedication);
+        if (!this.records || this.selectedMedications.size === 0) return [];
+        
+        const allRecords: MedilogRecord[] = [];
+        this.selectedMedications.forEach(medication => {
+            allRecords.push(...this.getFilteredRecordsForMedication(medication));
+        });
+        
+        // Sort by datetime descending
+        return allRecords.sort((a, b) => b.datetime.diff(a.datetime));
     }
 
     private renderFilteredRecordsTitle(localize: (key: string) => string): string {
