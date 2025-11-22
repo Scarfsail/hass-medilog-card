@@ -194,6 +194,7 @@ export class MedilogRecordDetailDialog extends LitElement {
 
         await this.hass.callService('medilog', 'add_or_update_record', {
             ...this._editedRecord,
+            medication: this._editedRecord.medication?.trim(),
             datetime: this._editedRecord.datetime.toISOString(),
             person_id: this._params?.personId
         } as MedilogRecordRaw, {}, true, false);
