@@ -141,11 +141,11 @@ export class MedilogRecordDetailDialog extends LitElement {
                         <div>
                             <div class="temperature-buttons">
                                 ${[36, 37, 38, 39, 40].map((t) => html`
-                                <ha-button .appearance=${this.doesTemperatureMatch(t, false) ? 'filled' : 'outlined'} @click=${() => this.setTemperature(t, false)}>${t}</ha-button>`)}
+                                <ha-button .appearance=${this.doesTemperatureMatch(t, false) ? 'accent' : 'plain'} @click=${() => this.setTemperature(t, false)}>${t}</ha-button>`)}
                             </div>
                             <div class="temperature-buttons">
                                 ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((t) => html`
-                                <ha-button .appearance=${this.doesTemperatureMatch(t, true) ? 'filled' : 'outlined'}  @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
+                                <ha-button .appearance=${this.doesTemperatureMatch(t, true) ? 'accent' : 'plain'}  @click=${() => this.setTemperature(t, true)}>${"." + t}</ha-button>`)}
                             </div>
                         </div>
                     ` : html`

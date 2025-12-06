@@ -112,10 +112,10 @@ export class MedilogPersonDetail extends LitElement {
         return html`
             <div class="controls">
                 <div class="view-toggle">
-                    <ha-button .appearance=${this.viewMode === 'timeline' ? 'filled' : 'outlined'} @click=${() => this.viewMode = 'timeline'}>
+                    <ha-button .appearance=${this.viewMode === 'timeline' ? 'accent' : 'plain'} @click=${() => this.viewMode = 'timeline'}>
                         <ha-icon icon="mdi:timeline-clock"></ha-icon>
                     </ha-button>
-                    <ha-button .appearance=${this.viewMode === 'medications' ? 'filled' : 'outlined'} @click=${() => this.viewMode = 'medications'}>
+                    <ha-button .appearance=${this.viewMode === 'medications' ? 'accent' : 'plain'} @click=${() => this.viewMode = 'medications'}>
                         <ha-icon icon="mdi:pill-multiple"></ha-icon>
                     </ha-button>
                 </div>
