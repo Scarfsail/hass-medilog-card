@@ -122,6 +122,8 @@ export class MedilogRecordDetailDialog extends LitElement {
                                 .label=${localize('dialog.medication_amount')}
                                 .value=${this._editedRecord.medication_amount ?? ""}
                                 type="number"
+                                step="0.5"
+                                min="0"
                                 @change=${(e: Event) => { 
                                     const value = (e.target as HTMLInputElement).value;
                                     this._editedRecord = { ...this._editedRecord!, medication_amount: value ? parseFloat(value) : undefined }; 
