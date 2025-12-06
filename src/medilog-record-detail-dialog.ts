@@ -7,11 +7,12 @@ import { mdiClose } from '@mdi/js';
 import { sharedStyles } from "./shared-styles";
 import { loadHaForm, loadHaYamlEditor } from "./load-ha-elements";
 import { getLocalizeFunction } from "./localize/localize";
+import { Utils } from "./utils";
 
 export interface MedilogRecordDetailDialogParams {
     record: MedilogRecord;
     personId: string;
-    uniqueMedications?: string[];
+    allRecords?: MedilogRecord[];
     closed: (changed: boolean) => void;
 }
 
@@ -22,12 +23,14 @@ export class MedilogRecordDetailDialog extends LitElement {
 
     @state() private _params?: MedilogRecordDetailDialogParams;
     @state() private _editedRecord?: MedilogRecord;
+    private _uniqueMedications: string[] = [];
 
     @property({ attribute: false }) public hass!: HomeAssistant;
 
     public showDialog(dialogParams: MedilogRecordDetailDialogParams): void {
         this._params = dialogParams;
         this._editedRecord = dialogParams.record;
+        this._uniqueMedications = this.calculateUniqueMedications();
     }
 
     static styles = [sharedStyles, css`
@@ -63,6 +66,12 @@ export class MedilogRecordDetailDialog extends LitElement {
         .temperature-value{
             margin: 0px;
         }
+        .last-taken-info {
+            color: var(--secondary-text-color);
+            font-size: 0.9em;
+            margin-top: 4px;
+            font-style: italic;
+        }
     `]
 
     render() {
@@ -90,33 +99,36 @@ export class MedilogRecordDetailDialog extends LitElement {
                         ></ha-selector>
                     </div>
 
-                    <div class="medication-row">
-                        <ha-combo-box
-                            .label=${localize('dialog.medication')}
-                            .value=${this._editedRecord.medication ?? ""}
-                            .items=${this._params.uniqueMedications}
-                            .itemLabelPath=${""}
-                            .itemValuePath=${""}
-                            .allowCustomValue=${true}
-                            @value-changed=${(e: CustomEvent) => { 
-                                const medication = e.detail.value;
-                                this._editedRecord = { 
-                                    ...this._editedRecord!, 
-                                    medication: medication,
-                                    medication_amount: medication ? (this._editedRecord!.medication_amount ?? 1) : undefined
-                                }; 
-                            }}
-                        >                        
-                        </ha-combo-box>
-                        <ha-textfield
-                            .label=${localize('dialog.medication_amount')}
-                            .value=${this._editedRecord.medication_amount ?? ""}
-                            type="number"
-                            @change=${(e: Event) => { 
-                                const value = (e.target as HTMLInputElement).value;
-                                this._editedRecord = { ...this._editedRecord!, medication_amount: value ? parseFloat(value) : undefined }; 
-                            }}
-                        ></ha-textfield>
+                    <div>
+                        <div class="medication-row">
+                            <ha-combo-box
+                                .label=${localize('dialog.medication')}
+                                .value=${this._editedRecord.medication ?? ""}
+                                .items=${this._uniqueMedications}
+                                .itemLabelPath=${""}
+                                .itemValuePath=${""}
+                                .allowCustomValue=${true}
+                                @value-changed=${(e: CustomEvent) => { 
+                                    const medication = e.detail.value;
+                                    this._editedRecord = { 
+                                        ...this._editedRecord!, 
+                                        medication: medication,
+                                        medication_amount: medication ? (this._editedRecord!.medication_amount ?? 1) : undefined
+                                    }; 
+                                }}
+                            >                        
+                            </ha-combo-box>
+                            <ha-textfield
+                                .label=${localize('dialog.medication_amount')}
+                                .value=${this._editedRecord.medication_amount ?? ""}
+                                type="number"
+                                @change=${(e: Event) => { 
+                                    const value = (e.target as HTMLInputElement).value;
+                                    this._editedRecord = { ...this._editedRecord!, medication_amount: value ? parseFloat(value) : undefined }; 
+                                }}
+                            ></ha-textfield>
+                        </div>
+                        ${this.renderLastTaken()}
                     </div>
                     <ha-textfield .label=${localize('dialog.notes')} .value=${this._editedRecord.note ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textfield>
                     ${this._editedRecord.temperature !== undefined ? html`
@@ -160,6 +172,44 @@ export class MedilogRecordDetailDialog extends LitElement {
             </ha-dialog>
         `;
 
+    }
+
+    private calculateUniqueMedications(): string[] {
+        if (!this._params?.allRecords) return [];
+        return [...new Set(this._params.allRecords
+            .filter(record => record.medication != undefined && record.medication != null)
+            .map(record => record.medication!))];
+    }
+
+    private getLastMedicationRecord(): MedilogRecord | undefined {
+        if (!this._editedRecord?.medication || !this._params?.allRecords) return undefined;
+        
+        const trimmedMedication = this._editedRecord.medication.trim();
+        if (!trimmedMedication) return undefined;
+
+        return this._params.allRecords
+            .filter(record => 
+                record.medication?.trim() === trimmedMedication
+            )
+            .sort((a, b) => b.datetime.diff(a.datetime))[0];
+    }
+
+    private renderLastTaken() {
+        const lastRecord = this.getLastMedicationRecord();
+        if (!lastRecord || !this._editedRecord) return nothing;
+
+        const localize = getLocalizeFunction(this.hass!);
+        const duration = Utils.formatDurationFromTo(lastRecord.datetime);
+        const amount = lastRecord.medication_amount && lastRecord.medication_amount > 1 
+            ? ` (${lastRecord.medication_amount}x)` 
+            : '';
+        
+        return html`
+            <div class="last-taken-info">
+                ${localize('dialog.last_taken').replace('{duration}', duration)}${amount}
+                
+            </div>
+        `;
     }
 
     private setTemperature(t: number, decimals: boolean) {

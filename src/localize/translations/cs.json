@@ -15,7 +15,8 @@
     "medication": "Lék",
     "medication_amount": "Množství",
     "notes": "Poznámky",
-    "delete_confirm": "Opravdu chcete smazat tento záznam?"
+    "delete_confirm": "Opravdu chcete smazat tento záznam?",
+    "last_taken": "Naposledy před {duration}"
   },
   "table": {
     "datetime": "Datum a čas",

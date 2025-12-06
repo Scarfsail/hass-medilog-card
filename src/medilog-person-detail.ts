@@ -26,7 +26,6 @@ export class MedilogPersonDetail extends LitElement {
     @state() private _records?: {
         all: MedilogRecord[]
         grouped: MedilogRecordsGroupByTime[]
-        uniqueMedications: string[]
     };
     @state() private viewMode: 'timeline' | 'medications' = 'timeline';
 
@@ -50,8 +49,7 @@ export class MedilogPersonDetail extends LitElement {
 
                 this._records = {
                     all: records,
-                    grouped: groupRecordsByPeriods(records),
-                    uniqueMedications: [...new Set(records.filter(record => record.medication != undefined && record.medication != null).map(record => record.medication!))]
+                    grouped: groupRecordsByPeriods(records)
                 }
 
             }
@@ -129,7 +127,7 @@ export class MedilogPersonDetail extends LitElement {
             ${this.viewMode === 'timeline' ? html`
                 ${this._records.grouped.map((group, idx) => html`
                     <ha-expansion-panel .outlined=${true} .expanded=${idx == 0} header=${group.from ? `${Utils.formatDate(group.from)} - ${Utils.formatDate(group.to)}` : Utils.formatDate(group.to)}>
-                        <medilog-records .records=${group.records} .uniqueMedications=${this._records?.uniqueMedications} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
+                        <medilog-records .records=${group.records} .allRecords=${this._records?.all} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
                     </ha-expansion-panel>
                 `)}
             ` : html`
@@ -152,7 +150,7 @@ export class MedilogPersonDetail extends LitElement {
                 medication: '',
                 note: ''
             },
-            uniqueMedications: this._records?.uniqueMedications
+            allRecords: this._records?.all
         })
 
     }

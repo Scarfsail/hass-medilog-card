@@ -11,7 +11,7 @@ import { getLocalizeFunction } from "./localize/localize";
 @customElement("medilog-records")
 export class MedilogRecords extends LitElement {
     @property({ attribute: false }) public person?: PersonInfo
-    @property({ attribute: false }) public uniqueMedications?: string[]
+    @property({ attribute: false }) public allRecords?: MedilogRecord[]
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
     @state() private visualization: 'chart' | 'table' = 'table';
@@ -37,7 +37,7 @@ export class MedilogRecords extends LitElement {
             </div>
             
             ${this.visualization === 'table'
-                ? html`<medilog-records-table .records=${this.records} .hass=${this.hass} .person=${this.person} .uniqueMedications=${this.uniqueMedications}></medilog-records-table>`
+                ? html`<medilog-records-table .records=${this.records} .hass=${this.hass} .person=${this.person} .allRecords=${this.allRecords}></medilog-records-table>`
                 : this.visualization === 'chart'
                 ? html`<medilog-records-chart .records=${this.records}></medilog-records-chart>`
                 : html`<div>Unknown visualization: ${this.visualization}</div>`
