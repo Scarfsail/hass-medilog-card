@@ -218,7 +218,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                         @click=${() => {
                             this.activeTab = 'medications';
                         }}
-                    ><ha-icon icon="mdi:pill"></ha-icon> ${localize('medications_manager.title')}</div>
+                    ><ha-icon icon="mdi:pill-multiple"></ha-icon> </div>
                 </div>
                 <div class="tab-content">
                     ${this.activeTab === 'person' && this.person 
