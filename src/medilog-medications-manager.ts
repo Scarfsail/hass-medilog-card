@@ -1,0 +1,253 @@
+import { LitElement, css, html, nothing } from "lit-element"
+import { customElement, property, state } from "lit/decorators.js";
+import { Medication } from "./models";
+import type { HomeAssistant } from "../hass-frontend/src/types";
+import { mdiPencil, mdiDelete, mdiPlus } from '@mdi/js';
+import { sharedStyles } from "./shared-styles";
+import { getLocalizeFunction } from "./localize/localize";
+import "./medilog-medication-dialog";
+import { Medications } from "./medications";
+
+@customElement("medilog-medications-manager")
+export class MedilogMedicationsManager extends LitElement {
+
+    @property({ attribute: false }) public hass?: HomeAssistant;
+    @property({ attribute: false }) public medications!: Medications;
+    @state() private _searchQuery: string = '';
+
+    private _getFilteredMedications(): Medication[] {
+        if (!this._searchQuery.trim()) {
+            return [...this.medications.all ?? []].sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        const query = this._searchQuery.toLowerCase();
+        return this.medications?.all
+            .filter(med =>
+                med.name.toLowerCase().includes(query) ||
+                (med.active_ingredient?.toLowerCase().includes(query) ?? false)
+            )
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    static styles = [sharedStyles, css`
+        .container {
+            padding: 16px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 16px;
+        }
+
+        .search-bar {
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .add-button {
+            --mdc-theme-primary: var(--success-color);
+            height: 48px;
+            font-weight: bold;
+            border-radius: 12px;
+            padding: 0 24px;
+        }
+
+        .medications-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        .medications-table th {
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 2px solid var(--divider-color);
+            color: var(--secondary-text-color);
+            font-weight: 500;
+            background: var(--secondary-background-color);
+        }
+
+        .medications-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--divider-color);
+        }
+
+        .medications-table tbody tr:hover {
+            background-color: var(--secondary-background-color);
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-button {
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .icon-button:hover {
+            background-color: var(--divider-color);
+            border-radius: 4px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--secondary-text-color);
+        }
+
+        .empty-state ha-icon {
+            --mdc-icon-size: 64px;
+            color: var(--disabled-text-color);
+            margin-bottom: 16px;
+        }
+
+        .antipyretic-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background-color: var(--info-color);
+            color: white;
+            font-size: 0.875rem;
+        }
+    `]
+
+    render() {
+        if (!this.hass) {
+            return nothing;
+        }
+
+        const localize = getLocalizeFunction(this.hass);
+        const filteredMedications = this._getFilteredMedications();
+
+        return html`
+            <div class="container">
+                <div class="header">
+                    <ha-textfield
+                        class="search-bar"
+                        .label=${localize('medications_manager.search_placeholder')}
+                        .value=${this._searchQuery}
+                        @input=${(e: Event) => {
+                this._searchQuery = (e.target as HTMLInputElement).value;
+            }}
+                    >
+                        <ha-icon icon="mdi:magnify" slot="leadingIcon"></ha-icon>
+                    </ha-textfield>
+                    
+                    <ha-button @click=${this._handleAdd} class="add-button">
+                        <ha-icon icon="mdi:plus"></ha-icon>
+                        ${localize('medications_manager.add_medication')}
+                    </ha-button>
+                </div>
+
+                ${filteredMedications.length === 0 ? html`
+                    <div class="empty-state">
+                        <ha-icon icon="mdi:pill"></ha-icon>
+                        <p>${this._searchQuery ? localize('medications_manager.no_results') : localize('medications_manager.empty_state')}</p>
+                    </div>
+                ` : html`
+                    <table class="medications-table">
+                        <thead>
+                            <tr>
+                                <th>${localize('medications_manager.column_name')}</th>
+                                <th>${localize('medications_manager.column_units')}</th>
+                                <th>${localize('medications_manager.column_antipyretic')}</th>
+                                <th>${localize('medications_manager.column_ingredient')}</th>
+                                <th>${localize('medications_manager.column_actions')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filteredMedications.map(med => html`
+                                <tr>
+                                    <td><strong>${med.name}</strong></td>
+                                    <td>${med.units || '-'}</td>
+                                    <td>
+                                        ${med.is_antipyretic ? html`
+                                            <span class="antipyretic-badge">
+                                                <ha-icon icon="mdi:thermometer"></ha-icon>
+                                                ${localize('medications_manager.yes')}
+                                            </span>
+                                        ` : localize('medications_manager.no')}
+                                    </td>
+                                    <td>${med.active_ingredient || '-'}</td>
+                                    <td>
+                                        <div class="actions">
+                                            <ha-icon-button
+                                                class="icon-button"
+                                                .path=${mdiPencil}
+                                                @click=${() => this._handleEdit(med)}
+                                            ></ha-icon-button>
+                                            <ha-icon-button
+                                                class="icon-button"
+                                                .path=${mdiDelete}
+                                                @click=${() => this._handleDelete(med)}
+                                            ></ha-icon-button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `)}
+                        </tbody>
+                    </table>
+                `}
+            </div>
+        `;
+    }
+
+    private _handleAdd() {
+        showMedicationDialog(this, {
+            medications: this.medications,
+            onClose: (changed: boolean) => {
+
+            }
+        });
+    }
+
+    private _handleEdit(medication: Medication) {
+        showMedicationDialog(this, {
+            medication: medication,
+            medications: this.medications,
+            onClose: (changed: boolean) => {
+                
+            }
+        });
+    }
+
+    private async _handleDelete(medication: Medication) {
+        if (!this.hass) return;
+
+        const localize = getLocalizeFunction(this.hass);
+        const confirmMessage = localize('medications_manager.delete_confirm').replace('{name}', medication.name);
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        try {
+            await this.hass.callService('medilog', 'delete_medication', { id: medication.id }, {}, true, false);
+            this.medications.fetchMedications(); // Refetch medications
+        } catch (error) {
+            console.error('Error deleting medication:', error);
+            const errorMessage = localize('medications_manager.delete_in_use').replace('{name}', medication.name);
+            alert(errorMessage);
+        }
+    }
+}
+
+export function showMedicationDialog(element: HTMLElement, params: import('./medilog-medication-dialog').MedicationDialogParams) {
+    const event = new CustomEvent("show-dialog", {
+        bubbles: true,
+        composed: true,
+        detail: {
+            dialogTag: "medilog-medication-dialog",
+            dialogImport: () => import("./medilog-medication-dialog"),
+            dialogParams: params
+        }
+    });
+    element.dispatchEvent(event);
+}

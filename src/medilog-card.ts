@@ -6,10 +6,13 @@ import type { LovelaceCardConfig } from "../hass-frontend/src/data/lovelace/conf
 import dayjs, { Dayjs } from "dayjs";
 import duration from 'dayjs/plugin/duration'
 import 'dayjs/locale/cs';
-import { PersonInfo, PersonInfoRaw } from "./models";
+import { PersonInfo, PersonInfoRaw, Medication } from "./models";
 import "./medilog-person-detail"
+import "./medilog-medications-manager"
 import { sharedStyles } from "./shared-styles";
 import { convertMedilogRecordRawToMedilogRecord } from "./medilog-person-detail";
+import { getLocalizeFunction } from "./localize/localize";
+import { Medications } from "./medications";
 dayjs.extend(duration);
 
 interface MedilogCardConfig extends LovelaceCardConfig {
@@ -23,6 +26,8 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     private config?: MedilogCardConfig;
     @state() private _hass?: HomeAssistant;
     @state() private persons: PersonInfo[] = [];
+    @state() private medications?: Medications;
+    @state() private activeTab: 'person' | 'medications' = 'person';
 
     @state() person?: PersonInfo;
     constructor() {
@@ -33,6 +38,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
 
     public set hass(value: HomeAssistant) {
         this._hass = value;
+
     }
 
     private async fetchPersons(): Promise<void> {
@@ -58,11 +64,18 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         }
     }
 
+    handleMedicationsChanged(){
+        this.requestUpdate();
+    }
     connectedCallback() {
         super.connectedCallback();
-        // Fetch persons when the component is connected
+        // Fetch medications first, then persons (persons need medications for conversion)
+        
         if (this._hass) {
-            this.fetchPersons();
+            this.medications = new Medications(this._hass, this.handleMedicationsChanged.bind(this));
+            this.medications?.fetchMedications().then(() => {
+                this.fetchPersons();
+            });
         }
     }
 
@@ -175,6 +188,8 @@ export class MedilogCard extends LitElement implements LovelaceCard {
             return "Config is not defined";
         }
 
+        const localize = getLocalizeFunction(this._hass!);
+
         // Convert persons array to format expected by ha-combo-box
         const personItems = this.persons.map(person => ({
             value: person.entity,
@@ -186,19 +201,31 @@ export class MedilogCard extends LitElement implements LovelaceCard {
             <ha-card>
                 <div class="tabs-container">
                     ${personItems.map((person, index) => {
-                        const isActive = this.person?.entity === person.value;
+                        const isActive = this.activeTab === 'person' && this.person?.entity === person.value;
                         return html`
                         <div 
                             class="tab ${isActive ? 'active-tab' : ''}"
-                            style="z-index: ${isActive ? personItems.length : index};"
+                            style="z-index: ${isActive ? personItems.length + 1 : index};"
                             @click=${() => {
+                                this.activeTab = 'person';
                                 this.person = this.persons.find(p => p.entity === person.value);
                             }}
                         >${person.label}</div>`
-                    })}            
+                    })}
+                    <div 
+                        class="tab ${this.activeTab === 'medications' ? 'active-tab' : ''}"
+                        style="z-index: ${this.activeTab === 'medications' ? personItems.length + 1 : personItems.length};"
+                        @click=${() => {
+                            this.activeTab = 'medications';
+                        }}
+                    ><ha-icon icon="mdi:pill"></ha-icon> ${localize('medications_manager.title')}</div>
                 </div>
                 <div class="tab-content">
-                    ${this.person ? html`<medilog-person-detail .person=${this.person} .hass=${this._hass}></medilog-person-detail>` : 'No person selected'}
+                    ${this.activeTab === 'person' && this.person 
+                        ? html`<medilog-person-detail .person=${this.person} .medications=${this.medications} .hass=${this._hass}></medilog-person-detail>` 
+                        : this.activeTab === 'medications'
+                        ? html`<medilog-medications-manager .medications=${this.medications} .hass=${this._hass}></medilog-medications-manager>`
+                        : 'No person selected'}
                 </div>
             </ha-card>
         `

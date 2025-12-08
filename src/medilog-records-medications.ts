@@ -1,10 +1,11 @@
 import { LitElement, css, html } from "lit-element"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
-import { MedilogRecord, PersonInfo } from "./models";
+import { Medication, MedilogRecord, PersonInfo } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { getLocalizeFunction } from "./localize/localize";
 import "./medilog-records-table";
+import { Medications } from "./medications";
 
 type DrillDownLevel = 'year' | 'month' | 'day' | 'hour';
 
@@ -25,6 +26,7 @@ export class MedilogRecordsMedications extends LitElement {
     @property({ attribute: false }) public person?: PersonInfo
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
+    @property({ attribute: false }) public medications!: Medications;
 
     @state() private drillDownState: DrillDownState = { level: 'year' };
     @state() private selectedMedications: Set<string> = new Set();
@@ -368,7 +370,7 @@ export class MedilogRecordsMedications extends LitElement {
 
         // Filter records based on current drill-down state
         const filteredRecords = records.filter(record => {
-            if (!record.medication) return false;
+            if (!record.medication_id) return false;
 
             const { level, year, month, day } = this.drillDownState;
 
@@ -389,13 +391,14 @@ export class MedilogRecordsMedications extends LitElement {
 
         // Group by medication and time period
         filteredRecords.forEach(record => {
-            if (!record.medication) return;
+            if (!record.medication_id) return;
 
-            if (!medicationMap.has(record.medication)) {
-                medicationMap.set(record.medication, new Map());
+            const medicationName = this.medications.getMedicationName(record.medication_id);
+            if (!medicationMap.has(medicationName)) {
+                medicationMap.set(medicationName, new Map());
             }
 
-            const counts = medicationMap.get(record.medication)!;
+            const counts = medicationMap.get(medicationName)!;
             const key = this.getTimeKey(record.datetime);
             counts.set(key, (counts.get(key) || 0) + 1);
         });
@@ -608,8 +611,9 @@ export class MedilogRecordsMedications extends LitElement {
         const { level, year, month, day } = this.drillDownState;
 
         return filteredRecords.filter(record => {
-            // Filter by medication
-            if (record.medication !== medication) return false;
+            // Filter by medication name
+            const medName = this.medications.getMedicationName(record.medication_id);
+            if (medName !== medication) return false;
 
             // Filter by time period based on drill-down level
             if (level === 'month' && year !== undefined) {

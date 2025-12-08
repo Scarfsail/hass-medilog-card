@@ -3,11 +3,12 @@ import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import duration from 'dayjs/plugin/duration'
 import 'dayjs/locale/cs';
-import { MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime, PersonInfo } from "./models";
+import { Medication, MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime, PersonInfo } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { Utils } from "./utils";
 import { getLocalizeFunction } from "./localize/localize";
+import { Medications } from "./medications";
 
 @customElement("medilog-records-table")
 export class MedilogRecordsTable extends LitElement {
@@ -15,6 +16,7 @@ export class MedilogRecordsTable extends LitElement {
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public allRecords?: MedilogRecord[]
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
+    @property({ attribute: false }) public medications!: Medications;
 
     static styles = css`
         .record-table {
@@ -154,7 +156,7 @@ export class MedilogRecordsTable extends LitElement {
                                 <td>${isFirstOfDay ? Utils.formatDate(record.datetime,true, false) : ''}</td>
                                 <td>${record.datetime.format('HH:mm')}</td>
                                 <td>${Utils.formatDurationFromTo(record.datetime)}</td>
-                                <td>${record.medication ? `${record.medication}${record.medication_amount && record.medication_amount > 1 ? ` (${record.medication_amount})` : ''}` : '-'}</td>
+                                <td>${this.getMedicationName(record) ? `${this.getMedicationName(record)}${record.medication_amount && record.medication_amount > 1 ? ` (${record.medication_amount})` : ''}` : '-'}</td>
                                 <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
                             </tr>
                         `;
@@ -164,11 +166,16 @@ export class MedilogRecordsTable extends LitElement {
         `
     }
 
+    private getMedicationName(record: MedilogRecord): string {
+        return this.medications.getMedicationName(record.medication_id);
+    }
+
     private showRecordDetailsDialog(record: MedilogRecord) {
         showMedilogRecordDetailDialog(this, {
             record: record,
             personId: this.person?.entity || '',
             allRecords: this.allRecords,
+            medications: this.medications,
             closed: this.dialogClosed.bind(this)
         });
     }

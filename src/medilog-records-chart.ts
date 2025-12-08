@@ -2,13 +2,15 @@ import { LitElement, html, css } from 'lit';
 //import ApexCharts from 'apexcharts';
 import dayjs from 'dayjs';
 import { customElement, property, query, state } from "lit/decorators.js";
-import { MedilogRecord } from './models';
+import { Medication, MedilogRecord } from './models';
+import { Medications } from './medications';
 
 type ApexCharts = any;
 @customElement("medilog-records-chart")
 class MedilogRecordsChart extends LitElement {
 
     @property({ attribute: false }) public records: (MedilogRecord | null)[] = [];
+    @property({ attribute: false }) public medications!: Medications;
     @query('#chart') private chartElement?: HTMLElement;
 
     private chart?: ApexCharts;
@@ -32,12 +34,12 @@ class MedilogRecordsChart extends LitElement {
 
         // Create annotations for medication events (records with medication)
         const medicationAnnotations = records
-            .filter(record => record.medication)
+            .filter(record => record.medication_id)
             .map(record => ({
                 x: record.datetime.valueOf(),
                 borderColor: '#FF4560',
                 label: {
-                    text: record.medication || 'Medication',
+                    text: this.medications.getMedicationName(record.medication_id) || 'Medication',
                     style: {
                         color: '#fff',
                         background: '#FF4560'

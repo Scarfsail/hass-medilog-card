@@ -18,6 +18,37 @@
     "delete_confirm": "Opravdu chcete smazat tento záznam?",
     "last_taken": "Naposledy před {duration}"
   },
+  "medication_dialog": {
+    "create_title": "Nový lék",
+    "edit_title": "Upravit lék",
+    "name": "Název",
+    "units": "Jednotky",
+    "is_antipyretic": "Antipyretikum",
+    "active_ingredient": "Účinná látka",
+    "error_name_required": "Název je povinný",
+    "error_name_exists": "Lék s tímto názvem už existuje",
+    "error_save_failed": "Chyba při ukládání léku",
+    "medication_not_found": "Lék nenalezen",
+    "create_medication_prompt": "Lék '{name}' nebyl nalezen. Vytvořit nový lék?"
+  },
+  "medications_manager": {
+    "title": "Správa léků",
+    "search_placeholder": "Hledat léky...",
+    "add_medication": "Přidat lék",
+    "edit": "Upravit",
+    "delete": "Smazat",
+    "delete_confirm": "Opravdu chcete smazat lék '{name}'?",
+    "delete_in_use": "Nelze smazat lék '{name}', protože je použit v záznamech",
+    "empty_state": "Zatím žádné léky. Přidejte svůj první lék.",
+    "no_results": "Žádné léky neodpovídají hledání",
+    "column_name": "Název",
+    "column_units": "Jednotky",
+    "column_antipyretic": "Antipyretikum",
+    "column_ingredient": "Účinná látka",
+    "column_actions": "Akce",
+    "yes": "Ano",
+    "no": "Ne"
+  },
   "table": {
     "datetime": "Datum a čas",
     "before": "Před",

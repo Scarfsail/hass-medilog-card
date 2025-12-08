@@ -1,17 +1,21 @@
 import { LitElement, css, html, nothing } from "lit-element"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
-import { MedilogRecord, MedilogRecordRaw } from "./models";
+import { MedilogRecord, MedilogRecordRaw, Medication } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { mdiClose } from '@mdi/js';
 import { sharedStyles } from "./shared-styles";
 import { loadHaForm, loadHaYamlEditor } from "./load-ha-elements";
 import { getLocalizeFunction } from "./localize/localize";
 import { Utils } from "./utils";
+import "./medilog-medication-dialog";
+import { Medications } from "./medications";
+import { showMedicationDialog } from "./medilog-medications-manager";
 
 export interface MedilogRecordDetailDialogParams {
     record: MedilogRecord;
     personId: string;
+    medications: Medications;
     allRecords?: MedilogRecord[];
     closed: (changed: boolean) => void;
 }
@@ -23,15 +27,12 @@ export class MedilogRecordDetailDialog extends LitElement {
 
     @state() private _params?: MedilogRecordDetailDialogParams;
     @state() private _editedRecord?: MedilogRecord;
-    private _uniqueMedications: string[] = [];
+    @state() private _sortedMedications: Medication[] = [];
+    @state() private _medicationItems: Array<{ value: string, label: string }> = [];
 
     @property({ attribute: false }) public hass!: HomeAssistant;
 
-    public showDialog(dialogParams: MedilogRecordDetailDialogParams): void {
-        this._params = dialogParams;
-        this._editedRecord = dialogParams.record;
-        this._uniqueMedications = this.calculateUniqueMedications();
-    }
+
 
     static styles = [sharedStyles, css`
         .fill {
@@ -73,7 +74,21 @@ export class MedilogRecordDetailDialog extends LitElement {
             font-style: italic;
         }
     `]
+    public showDialog(dialogParams: MedilogRecordDetailDialogParams): void {
+        this._params = dialogParams;
+        this._editedRecord = dialogParams.record;
+        this.refreshMedicationItems();
+    }
 
+    private refreshMedicationItems() {
+        this._sortedMedications = this._calculateSortedMedications();
+        this._medicationItems = this._sortedMedications.map(med => ({
+            value: med.id,
+            //label: (this._isMedicationUsedByPerson(med.id) ? '⭐ ' : '') + med.name + (med.units ? ` (${med.units})` : '')
+            label: med.name
+        }));
+
+    }
     render() {
         if (!this._params || !this.hass || !this._editedRecord) {
             return nothing;
@@ -102,21 +117,16 @@ export class MedilogRecordDetailDialog extends LitElement {
                     <div>
                         <div class="medication-row">
                             <ha-combo-box
+                                id="medication-combo-box"
                                 .label=${localize('dialog.medication')}
-                                .value=${this._editedRecord.medication ?? ""}
-                                .items=${this._uniqueMedications}
-                                .itemLabelPath=${""}
-                                .itemValuePath=${""}
+                                .value=${this._editedRecord.medication_id ?? ""}
+                                .items=${this._medicationItems}
+                                .itemLabelPath=${"label"}
+                                .itemValuePath=${"value"}
                                 .allowCustomValue=${true}
-                                @value-changed=${(e: CustomEvent) => { 
-                                    const medication = e.detail.value;
-                                    this._editedRecord = { 
-                                        ...this._editedRecord!, 
-                                        medication: medication,
-                                        medication_amount: medication ? (this._editedRecord!.medication_amount ?? 1) : undefined
-                                    }; 
-                                }}
-                            >                        
+                                @value-changed=${this._handleMedicationChange}
+                                @blur=${this._handleMedicationBlur}
+                            >
                             </ha-combo-box>
                             <ha-textfield
                                 .label=${localize('dialog.medication_amount')}
@@ -124,13 +134,14 @@ export class MedilogRecordDetailDialog extends LitElement {
                                 type="number"
                                 step="0.5"
                                 min="0"
-                                @change=${(e: Event) => { 
-                                    const value = (e.target as HTMLInputElement).value;
-                                    this._editedRecord = { ...this._editedRecord!, medication_amount: value ? parseFloat(value) : undefined }; 
-                                }}
+                                .disabled=${!this._editedRecord.medication_id}
+                                @change=${(e: Event) => {
+                const value = (e.target as HTMLInputElement).value;
+                this._editedRecord = { ...this._editedRecord!, medication_amount: value ? parseFloat(value) : undefined };
+            }}
                             ></ha-textfield>
                         </div>
-                        ${this.renderLastTaken()}
+                        ${this._renderLastTaken()}
                     </div>
                     <ha-textfield .label=${localize('dialog.notes')} .value=${this._editedRecord.note ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textfield>
                     ${this._editedRecord.temperature !== undefined ? html`
@@ -176,43 +187,148 @@ export class MedilogRecordDetailDialog extends LitElement {
 
     }
 
-    private calculateUniqueMedications(): string[] {
-        if (!this._params?.allRecords) return [];
-        return [...new Set(this._params.allRecords
-            .filter(record => record.medication != undefined && record.medication != null)
-            .map(record => record.medication!))];
+    private _calculateSortedMedications(): Medication[] {
+        if (!this._params?.medications) return [];
+
+        // Build usage map from person's records
+        const usageMap = new Map<string, dayjs.Dayjs>();
+        this._params.allRecords?.forEach(record => {
+            if (record.medication_id) {
+                const existing = usageMap.get(record.medication_id);
+                if (!existing || record.datetime.isAfter(existing)) {
+                    usageMap.set(record.medication_id, record.datetime);
+                }
+            }
+        });
+
+        // Separate into used and unused groups
+        const used: Array<{ med: Medication, lastUsed: dayjs.Dayjs }> = [];
+        const unused: Medication[] = [];
+
+        this._params.medications.all.forEach(med => {
+            const lastUsed = usageMap.get(med.id);
+            if (lastUsed) {
+                used.push({ med, lastUsed });
+            } else {
+                unused.push(med);
+            }
+        });
+
+        // Sort each group
+        used.sort((a, b) => b.lastUsed.diff(a.lastUsed)); // Most recent first
+        unused.sort((a, b) => a.name.localeCompare(b.name)); // Alphabetical
+
+        // Combine
+        return [...used.map(u => u.med), ...unused];
     }
 
-    private getLastMedicationRecord(): MedilogRecord | undefined {
-        if (!this._editedRecord?.medication || !this._params?.allRecords) return undefined;
-        
-        const trimmedMedication = this._editedRecord.medication.trim();
-        if (!trimmedMedication) return undefined;
-
-        return this._params.allRecords
-            .filter(record => 
-                record.medication?.trim() === trimmedMedication
-            )
-            .sort((a, b) => b.datetime.diff(a.datetime))[0];
+    private _isMedicationUsedByPerson(medicationId: string): boolean {
+        return this._params?.allRecords?.some(record => record.medication_id === medicationId) ?? false;
     }
 
-    private renderLastTaken() {
-        const lastRecord = this.getLastMedicationRecord();
+    private _handleMedicationChange(e: CustomEvent) {
+        const value = e.detail.value; //Contains ID when selected from dropdown, or custom text when typed
+
+        console.log("Medication changed to:", value, e);
+        if (!value || !value.trim()) {
+            // Empty value - clear medication
+            this._editedRecord = {
+                ...this._editedRecord!,
+                medication_id: undefined,
+                medication_amount: undefined
+            };
+            return;
+        }
+        // Check if it's a valid medication ID
+        const medication = this._params?.medications.getMedication(value);
+
+        if (medication) {
+            // Valid medication selected
+            this._editedRecord = {
+                ...this._editedRecord!,
+                medication_id: medication.id,
+                medication_amount: this._editedRecord!.medication_amount ?? 1
+            };
+        } else {
+            // Custom text entered - clear medication ID for now
+            this._editedRecord = {
+                ...this._editedRecord!,
+                medication_id: value
+            };
+        }
+    }
+
+    private _handleMedicationBlur(e: CustomEvent) {
+        const dropDown = e.target as any;
+        const value = dropDown._inputElement.value;
+        if (!value || !value.trim()) {
+            return;
+        }
+        const medication = this._medicationItems.find(item => item.label === value);
+        if (!medication) {
+            // User entered custom text - ask if they want to create new medication
+            const medicationName = value.trim();
+            this._showMedicationCreationDialog(medicationName);
+        } else {
+            this._editedRecord = {
+                ...this._editedRecord!,
+                medication_id: medication.value,
+                medication_amount: this._editedRecord!.medication_amount ?? 1
+            };
+        }
+
+    }
+    private _renderLastTaken() {
+        const lastRecord = this._getLastMedicationRecord();
         if (!lastRecord || !this._editedRecord) return nothing;
 
         const localize = getLocalizeFunction(this.hass!);
         const duration = Utils.formatDurationFromTo(lastRecord.datetime);
-        const amount = lastRecord.medication_amount && lastRecord.medication_amount > 1 
-            ? ` (${lastRecord.medication_amount}x)` 
+        const amount = lastRecord.medication_amount && lastRecord.medication_amount > 1
+            ? ` (${lastRecord.medication_amount}x)`
             : '';
-        
+
         return html`
             <div class="last-taken-info">
                 ${localize('dialog.last_taken').replace('{duration}', duration)}${amount}
-                
             </div>
         `;
     }
+
+    private _getLastMedicationRecord(): MedilogRecord | undefined {
+        if (!this._editedRecord?.medication_id || !this._params?.allRecords) return undefined;
+
+        const medicationId = this._editedRecord.medication_id;
+        if (!medicationId) return undefined;
+
+        return this._params.allRecords
+            .filter(record => record.medication_id === medicationId)
+            .sort((a, b) => b.datetime.diff(a.datetime))[0];
+    }
+
+    private _showMedicationCreationDialog(medicationName: string) {
+        showMedicationDialog(this, {
+            medications: this._params?.medications!,
+            initialName: medicationName,
+            onClose: (changed) => {
+                if (changed) {
+                    this.refreshMedicationItems();
+                }
+                this._focusMedicationComboBox();
+            }
+        });
+    }
+
+    private _focusMedicationComboBox() {
+        setTimeout(() => {
+            const comboBox = this.shadowRoot?.querySelector('#medication-combo-box') as any;
+            if (comboBox) {
+                comboBox.focus();
+            }
+        }, 100);
+    }
+
+
 
     private setTemperature(t: number, decimals: boolean) {
         let temperature = this._editedRecord?.temperature;
@@ -245,9 +361,12 @@ export class MedilogRecordDetailDialog extends LitElement {
             return;
 
         await this.hass.callService('medilog', 'add_or_update_record', {
-            ...this._editedRecord,
-            medication: this._editedRecord.medication?.trim(),
+            id: this._editedRecord.id,
             datetime: this._editedRecord.datetime.toISOString(),
+            temperature: this._editedRecord.temperature,
+            medication_id: this._editedRecord.medication_id,
+            medication_amount: this._editedRecord.medication_amount,
+            note: this._editedRecord.note?.trim(),
             person_id: this._params?.personId
         } as MedilogRecordRaw, {}, true, false);
         this.closeDialog(true);

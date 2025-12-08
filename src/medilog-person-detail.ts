@@ -3,7 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import duration from 'dayjs/plugin/duration'
 import 'dayjs/locale/cs';
-import { MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime, PersonInfo, PersonInfoRaw } from "./models";
+import { MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime, PersonInfo, PersonInfoRaw, Medication } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { getLocalizeFunction } from "./localize/localize";
@@ -11,6 +11,7 @@ import "./medilog-records"
 import "./medilog-records-medications"
 import { showMedilogRecordDetailDialog } from "./medilog-records-table";
 import { Utils } from "./utils";
+import { Medications } from "./medications";
 dayjs.extend(duration);
 
 @customElement("medilog-person-detail")
@@ -23,6 +24,7 @@ export class MedilogPersonDetail extends LitElement {
             this.fetchRecords();
     }
     @property({ attribute: false }) public hass?: HomeAssistant;
+    @property({ attribute: false }) public medications!: Medications;
     @state() private _records?: {
         all: MedilogRecord[]
         grouped: MedilogRecordsGroupByTime[]
@@ -127,11 +129,11 @@ export class MedilogPersonDetail extends LitElement {
             ${this.viewMode === 'timeline' ? html`
                 ${this._records.grouped.map((group, idx) => html`
                     <ha-expansion-panel .outlined=${true} .expanded=${idx == 0} header=${group.from ? `${Utils.formatDate(group.from)} - ${Utils.formatDate(group.to)}` : Utils.formatDate(group.to)}>
-                        <medilog-records .records=${group.records} .allRecords=${this._records?.all} .hass=${this.hass} .person=${this._person} @records-changed=${() => this.fetchRecords()}></medilog-records>
+                        <medilog-records .records=${group.records} .allRecords=${this._records?.all} .hass=${this.hass} .person=${this._person} .medications=${this.medications} @records-changed=${() => this.fetchRecords()}></medilog-records>
                     </ha-expansion-panel>
                 `)}
             ` : html`
-                <medilog-records-medications .records=${this._records.all} .hass=${this.hass} .person=${this._person}></medilog-records-medications>
+                <medilog-records-medications .records=${this._records.all} .hass=${this.hass} .person=${this._person} .medications=${this.medications}></medilog-records-medications>
             `}
         `
     }
@@ -139,6 +141,7 @@ export class MedilogPersonDetail extends LitElement {
     private addNewRecord() {
         showMedilogRecordDetailDialog(this, {
             personId: this._person?.entity || '',
+            medications: this.medications,
             closed: (changed) => {
                 if (changed) {
                     this.fetchRecords();
@@ -147,7 +150,7 @@ export class MedilogPersonDetail extends LitElement {
             record: {
                 datetime: dayjs(),
                 temperature: undefined,
-                medication: '',
+                medication_id: undefined,
                 note: ''
             },
             allRecords: this._records?.all
