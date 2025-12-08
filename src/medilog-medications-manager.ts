@@ -3,7 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { Medication } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { mdiPencil, mdiDelete, mdiPlus } from '@mdi/js';
-import { sharedStyles } from "./shared-styles";
+import { sharedStyles, sharedTableStyles } from "./shared-styles";
 import { getLocalizeFunction } from "./localize/localize";
 import "./medilog-medication-dialog";
 import { Medications } from "./medications";
@@ -29,7 +29,7 @@ export class MedilogMedicationsManager extends LitElement {
             .sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    static styles = [sharedStyles, css`
+    static styles = [sharedStyles, sharedTableStyles, css`
         .container {
             padding: 16px;
         }
@@ -55,43 +55,22 @@ export class MedilogMedicationsManager extends LitElement {
             padding: 0 24px;
         }
 
-        .medications-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 16px;
-        }
-
-        .medications-table th {
+        table th {
             text-align: left;
-            padding: 12px 16px;
-            border-bottom: 2px solid var(--divider-color);
-            color: var(--secondary-text-color);
-            font-weight: 500;
-            background: var(--secondary-background-color);
         }
 
-        .medications-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--divider-color);
-        }
-
-        .medications-table tbody tr:hover {
-            background-color: var(--secondary-background-color);
+        table td {
+            text-align: left;
         }
 
         .actions {
             display: flex;
             gap: 8px;
+            justify-content: center;
         }
 
-        .icon-button {
-            cursor: pointer;
-            padding: 8px;
-        }
-
-        .icon-button:hover {
-            background-color: var(--divider-color);
-            border-radius: 4px;
+        .actions ha-icon-button {
+            --mdc-icon-button-size: 36px;
         }
 
         .empty-state {
@@ -152,7 +131,7 @@ export class MedilogMedicationsManager extends LitElement {
                         <p>${this._searchQuery ? localize('medications_manager.no_results') : localize('medications_manager.empty_state')}</p>
                     </div>
                 ` : html`
-                    <table class="medications-table">
+                    <table>
                         <thead>
                             <tr>
                                 <th>${localize('medications_manager.column_name')}</th>
@@ -164,7 +143,7 @@ export class MedilogMedicationsManager extends LitElement {
                         </thead>
                         <tbody>
                             ${filteredMedications.map(med => html`
-                                <tr>
+                                <tr @click=${() => this._handleEdit(med)}>
                                     <td><strong>${med.name}</strong></td>
                                     <td>${med.units || '-'}</td>
                                     <td>
@@ -180,13 +159,11 @@ export class MedilogMedicationsManager extends LitElement {
                                         <div class="actions">
                                             <ha-icon-button
                                                 class="icon-button"
-                                                .path=${mdiPencil}
-                                                @click=${() => this._handleEdit(med)}
-                                            ></ha-icon-button>
-                                            <ha-icon-button
-                                                class="icon-button"
                                                 .path=${mdiDelete}
-                                                @click=${() => this._handleDelete(med)}
+                                                @click=${(e: Event) => {
+                                                    e.stopPropagation();
+                                                    this._handleDelete(med);
+                                                }}
                                             ></ha-icon-button>
                                         </div>
                                     </td>

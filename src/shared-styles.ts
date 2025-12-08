@@ -10,3 +10,33 @@ export const sharedStyles = css`
             --mdc-theme-primary: var(--error-color);
          }  
 `
+
+export const sharedTableStyles = css`
+    table {
+        border-collapse: collapse;
+        margin-bottom: 16px;
+    }
+    
+    table th {
+        text-align: center;
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+        color: var(--secondary-text-color);
+        font-weight: 500;
+    }
+    
+    table td {
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
+        text-align: center;
+    }
+    
+    table tbody tr {
+        cursor: pointer;
+    }
+    
+    table tbody tr:hover {
+        background-color: var(--primary-color);
+        color: var(--text-primary-color);
+    }
+`

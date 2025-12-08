@@ -9,6 +9,7 @@ import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog"
 import { Utils } from "./utils";
 import { getLocalizeFunction } from "./localize/localize";
 import { Medications } from "./medications";
+import { sharedTableStyles } from "./shared-styles";
 
 @customElement("medilog-records-table")
 export class MedilogRecordsTable extends LitElement {
@@ -18,37 +19,9 @@ export class MedilogRecordsTable extends LitElement {
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
     @property({ attribute: false }) public medications!: Medications;
 
-    static styles = css`
-        .record-table {
-            border-collapse: collapse;
-            margin-bottom: 16px;
-        }
-        
-        .record-table th {
-            text-align: center;
-            padding: 8px 16px;
-            border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
-            color: var(--secondary-text-color);
-            font-weight: 500;
-        }
-        
-        .record-table td {
-            padding: 8px 16px;
-            border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
-            text-align: center;
-        }
-        
+    static styles = [sharedTableStyles, css`
         .record-table tbody tr:not(.day-separator) td:first-child {
             border-bottom: none;
-        }
-        
-        .record-table tbody tr {
-            cursor: pointer;
-        }
-        
-        .record-table tbody tr:hover {
-            background-color: var(--primary-color);
-            color: var(--text-primary-color);
         }
         
         .day-separator {
@@ -109,7 +82,7 @@ export class MedilogRecordsTable extends LitElement {
         .record-table tbody tr:first-child .date-header {
             border-top: none;
         }
-    `
+    `]
 
     render() {
         if (!this.person) {
