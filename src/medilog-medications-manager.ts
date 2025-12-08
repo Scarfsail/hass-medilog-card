@@ -13,19 +13,33 @@ export class MedilogMedicationsManager extends LitElement {
 
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public medications!: Medications;
-    @state() private _searchQuery: string = '';
+    @state() private _filterName: string = '';
+    @state() private _filterUnits: string = '';
+    @state() private _filterAntipyretic: string = '';
+    @state() private _filterIngredient: string = '';
 
     private _getFilteredMedications(): Medication[] {
-        if (!this._searchQuery.trim()) {
-            return [...this.medications.all ?? []].sort((a, b) => a.name.localeCompare(b.name));
-        }
-
-        const query = this._searchQuery.toLowerCase();
+        const localize = getLocalizeFunction(this.hass!);
+        
         return this.medications?.all
-            .filter(med =>
-                med.name.toLowerCase().includes(query) ||
-                (med.active_ingredient?.toLowerCase().includes(query) ?? false)
-            )
+            .filter(med => {
+                const matchesName = !this._filterName.trim() || 
+                    med.name.toLowerCase().includes(this._filterName.toLowerCase());
+                
+                const matchesUnits = !this._filterUnits.trim() || 
+                    (med.units?.toLowerCase().includes(this._filterUnits.toLowerCase()) ?? false);
+                
+                const antipyreticText = med.is_antipyretic 
+                    ? localize('medications_manager.yes').toLowerCase()
+                    : localize('medications_manager.no').toLowerCase();
+                const matchesAntipyretic = !this._filterAntipyretic.trim() || 
+                    antipyreticText.includes(this._filterAntipyretic.toLowerCase());
+                
+                const matchesIngredient = !this._filterIngredient.trim() || 
+                    (med.active_ingredient?.toLowerCase().includes(this._filterIngredient.toLowerCase()) ?? false);
+                
+                return matchesName && matchesUnits && matchesAntipyretic && matchesIngredient;
+            })
             .sort((a, b) => a.name.localeCompare(b.name));
     }
 
@@ -36,15 +50,10 @@ export class MedilogMedicationsManager extends LitElement {
 
         .header {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             align-items: center;
             margin-bottom: 16px;
             gap: 16px;
-        }
-
-        .search-bar {
-            flex: 1;
-            max-width: 400px;
         }
 
         .add-button {
@@ -57,10 +66,18 @@ export class MedilogMedicationsManager extends LitElement {
 
         table th {
             text-align: left;
+            padding: 8px;
+            vertical-align: top;
         }
 
         table td {
             text-align: left;
+        }
+
+        .filter-field {
+            width: 100%;
+            --mdc-text-field-outlined-idle-border-color: var(--divider-color);
+            --mdc-text-field-outlined-hover-border-color: var(--primary-color);
         }
 
         .empty-state {
@@ -98,36 +115,61 @@ export class MedilogMedicationsManager extends LitElement {
         return html`
             <div class="container">
                 <div class="header">
-                    <ha-textfield
-                        class="search-bar"
-                        .label=${localize('medications_manager.search_placeholder')}
-                        .value=${this._searchQuery}
-                        @input=${(e: Event) => {
-                this._searchQuery = (e.target as HTMLInputElement).value;
-            }}
-                    >
-                        <ha-icon icon="mdi:magnify" slot="leadingIcon"></ha-icon>
-                    </ha-textfield>
-                    
                     <ha-button @click=${this._handleAdd} class="add-button">
                         <ha-icon icon="mdi:plus"></ha-icon>
                         ${localize('medications_manager.add_medication')}
                     </ha-button>
                 </div>
 
-                ${filteredMedications.length === 0 ? html`
+                ${filteredMedications.length === 0 && !this._filterName && !this._filterUnits && !this._filterAntipyretic && !this._filterIngredient ? html`
                     <div class="empty-state">
                         <ha-icon icon="mdi:pill"></ha-icon>
-                        <p>${this._searchQuery ? localize('medications_manager.no_results') : localize('medications_manager.empty_state')}</p>
+                        <p>${localize('medications_manager.empty_state')}</p>
                     </div>
                 ` : html`
                     <table>
                         <thead>
                             <tr>
-                                <th>${localize('medications_manager.column_name')}</th>
-                                <th>${localize('medications_manager.column_units')}</th>
-                                <th>${localize('medications_manager.column_antipyretic')}</th>
-                                <th>${localize('medications_manager.column_ingredient')}</th>
+                                <th>
+                                    <ha-textfield
+                                        class="filter-field"
+                                        .label=${localize('medications_manager.column_name')}
+                                        .value=${this._filterName}
+                                        @input=${(e: Event) => {
+                                            this._filterName = (e.target as HTMLInputElement).value;
+                                        }}
+                                    ></ha-textfield>
+                                </th>
+                                <th>
+                                    <ha-textfield
+                                        class="filter-field"
+                                        .label=${localize('medications_manager.column_units')}
+                                        .value=${this._filterUnits}
+                                        @input=${(e: Event) => {
+                                            this._filterUnits = (e.target as HTMLInputElement).value;
+                                        }}
+                                    ></ha-textfield>
+                                </th>
+                                <th>
+                                    <ha-textfield
+                                        class="filter-field"
+                                        .label=${localize('medications_manager.column_antipyretic')}
+                                        .value=${this._filterAntipyretic}
+                                        @input=${(e: Event) => {
+                                            this._filterAntipyretic = (e.target as HTMLInputElement).value;
+                                        }}
+                                    ></ha-textfield>
+                                </th>
+                                <th>
+                                    <ha-textfield
+                                        class="filter-field"
+                                        .label=${localize('medications_manager.column_ingredient')}
+                                        .value=${this._filterIngredient}
+                                        @input=${(e: Event) => {
+                                            this._filterIngredient = (e.target as HTMLInputElement).value;
+                                        }}
+                                    ></ha-textfield>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -148,6 +190,12 @@ export class MedilogMedicationsManager extends LitElement {
                             `)}
                         </tbody>
                     </table>
+                    ${filteredMedications.length === 0 ? html`
+                        <div class="empty-state">
+                            <ha-icon icon="mdi:filter-remove"></ha-icon>
+                            <p>${localize('medications_manager.no_results')}</p>
+                        </div>
+                    ` : nothing}
                 `}
             </div>
         `;
