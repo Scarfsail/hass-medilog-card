@@ -75,6 +75,9 @@ export class MedilogMedicationDialog extends LitElement {
         .field {
             margin-bottom: 16px;
         }
+        .field ha-textfield {
+            min-width: 426px;
+        }
         .error {
             color: var(--error-color);
             font-size: 0.875rem;
@@ -158,9 +161,15 @@ export class MedilogMedicationDialog extends LitElement {
                     </div>
                 </div>
 
-                <ha-button slot="primaryAction" @click=${this._handleClose}>
-                    ${localize('common.cancel')}
-                </ha-button>
+                ${isEditMode ? html`
+                    <ha-button slot="primaryAction" .variant=${"danger"} @click=${this._handleDelete} class="button-error">
+                        ${localize('common.delete')}
+                    </ha-button>
+                    
+                    <ha-button slot="primaryAction" @click=${this._handleDuplicate}>
+                        ${localize('common.duplicate')}
+                    </ha-button>
+                ` : nothing}
                 
                 <ha-button slot="primaryAction" .variant=${"success"} @click=${this._handleSave}>
                     ${localize('common.save')}
@@ -229,6 +238,46 @@ export class MedilogMedicationDialog extends LitElement {
             this._errors.name = getLocalizeFunction(this.hass!)('medication_dialog.error_save_failed');
             this.requestUpdate();
         }
+    }
+
+    private async _handleDelete() {
+        if (!this.hass || !this._params?.medication) return;
+
+        const localize = getLocalizeFunction(this.hass!);
+        const confirmMessage = localize('medications_manager.delete_confirm').replace('{name}', this._params.medication.name);
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        try {
+            await this.hass.callService(
+                'medilog',
+                'delete_medication',
+                { id: this._params.medication.id },
+                {},
+                true,
+                false
+            );
+
+            await this._params?.medications.fetchMedications();
+            this._handleClose(true);
+        } catch (error) {
+            console.error('Error deleting medication:', error);
+            const errorMessage = localize('medications_manager.delete_in_use').replace('{name}', this._params.medication.name);
+            alert(errorMessage);
+        }
+    }
+
+    private _handleDuplicate() {
+        if (!this._params?.medication) return;
+
+        // Clear the medication reference to switch to create mode, but keep the form data
+        this._params = {
+            ...this._params,
+            medication: undefined
+        };
+        this.requestUpdate();
     }
 
     private _handleClose(changed: boolean = false) {

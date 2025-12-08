@@ -2,7 +2,7 @@ import { LitElement, css, html, nothing } from "lit-element"
 import { customElement, property, state } from "lit/decorators.js";
 import { Medication } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
-import { mdiPencil, mdiDelete, mdiPlus } from '@mdi/js';
+import { mdiPlus } from '@mdi/js';
 import { sharedStyles, sharedTableStyles } from "./shared-styles";
 import { getLocalizeFunction } from "./localize/localize";
 import "./medilog-medication-dialog";
@@ -61,16 +61,6 @@ export class MedilogMedicationsManager extends LitElement {
 
         table td {
             text-align: left;
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        .actions ha-icon-button {
-            --mdc-icon-button-size: 36px;
         }
 
         .empty-state {
@@ -138,7 +128,6 @@ export class MedilogMedicationsManager extends LitElement {
                                 <th>${localize('medications_manager.column_units')}</th>
                                 <th>${localize('medications_manager.column_antipyretic')}</th>
                                 <th>${localize('medications_manager.column_ingredient')}</th>
-                                <th>${localize('medications_manager.column_actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -155,18 +144,6 @@ export class MedilogMedicationsManager extends LitElement {
                                         ` : localize('medications_manager.no')}
                                     </td>
                                     <td>${med.active_ingredient || '-'}</td>
-                                    <td>
-                                        <div class="actions">
-                                            <ha-icon-button
-                                                class="icon-button"
-                                                .path=${mdiDelete}
-                                                @click=${(e: Event) => {
-                                                    e.stopPropagation();
-                                                    this._handleDelete(med);
-                                                }}
-                                            ></ha-icon-button>
-                                        </div>
-                                    </td>
                                 </tr>
                             `)}
                         </tbody>
@@ -193,26 +170,6 @@ export class MedilogMedicationsManager extends LitElement {
                 
             }
         });
-    }
-
-    private async _handleDelete(medication: Medication) {
-        if (!this.hass) return;
-
-        const localize = getLocalizeFunction(this.hass);
-        const confirmMessage = localize('medications_manager.delete_confirm').replace('{name}', medication.name);
-
-        if (!confirm(confirmMessage)) {
-            return;
-        }
-
-        try {
-            await this.hass.callService('medilog', 'delete_medication', { id: medication.id }, {}, true, false);
-            this.medications.fetchMedications(); // Refetch medications
-        } catch (error) {
-            console.error('Error deleting medication:', error);
-            const errorMessage = localize('medications_manager.delete_in_use').replace('{name}', medication.name);
-            alert(errorMessage);
-        }
     }
 }
 
