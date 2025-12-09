@@ -16,7 +16,17 @@
     "medication_amount": "Množství",
     "notes": "Poznámky",
     "delete_confirm": "Opravdu chcete smazat tento záznam?",
-    "last_taken": "Naposledy před {duration}"
+    "last_taken": "Naposledy před {duration}",
+    "no_medication": "Žádný lék"
+  },
+  "medication_picker": {
+    "title": "Vyberte lék",
+    "filter_placeholder": "Hledat lék...",
+    "add_new_medication": "Přidat nový lék",
+    "column_name": "Název",
+    "column_units": "Jednotky",
+    "column_last_taken": "Naposledy použito",
+    "never": "Nikdy"
   },
   "medication_dialog": {
     "create_title": "Nový lék",
