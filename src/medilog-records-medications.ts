@@ -23,56 +23,7 @@ interface DrillDownState {
 
 @customElement("medilog-records-medications")
 export class MedilogRecordsMedications extends LitElement {
-    @property({ attribute: false }) public person?: PersonInfo
-    @property({ attribute: false }) public hass?: HomeAssistant;
-    @property({ attribute: false }) public records?: (MedilogRecord | null)[];
-    @property({ attribute: false }) public medications!: Medications;
-
-    @state() private drillDownState: DrillDownState = { level: 'year' };
-    @state() private selectedMedications: Set<string> = new Set();
-    
-    private longPressTimer?: number;
-    private readonly longPressDuration = 500; // ms
-
-    connectedCallback() {
-        super.connectedCallback();
-        window.addEventListener('popstate', this.handlePopState);
-        this.restoreStateFromUrl();
-    }
-
-    disconnectedCallback() {
-        super.disconnectedCallback();
-        window.removeEventListener('popstate', this.handlePopState);
-        if (this.longPressTimer) {
-            clearTimeout(this.longPressTimer);
-        }
-    }
-
-    private handlePopState = (event: PopStateEvent) => {
-        if (event.state?.medicationsDrillDown) {
-            this.drillDownState = event.state.medicationsDrillDown;
-            this.requestUpdate();
-        } else {
-            this.drillDownState = { level: 'year' };
-            this.requestUpdate();
-        }
-    }
-
-    private restoreStateFromUrl() {
-        const state = history.state;
-        if (state?.medicationsDrillDown) {
-            this.drillDownState = state.medicationsDrillDown;
-        }
-    }
-
-    private pushState(newState: DrillDownState) {
-        history.pushState(
-            { medicationsDrillDown: newState },
-            '',
-            window.location.pathname + window.location.search
-        );
-    }
-
+    // Static styles
     static styles = css`
         .medications-container {
             padding: 16px 0;
@@ -244,6 +195,36 @@ export class MedilogRecordsMedications extends LitElement {
         }
     `
 
+    // Private properties
+    private longPressTimer?: number;
+    private readonly longPressDuration = 500; // ms
+
+    // Public properties
+    @property({ attribute: false }) public person?: PersonInfo
+    @property({ attribute: false }) public hass?: HomeAssistant;
+    @property({ attribute: false }) public records?: (MedilogRecord | null)[];
+    @property({ attribute: false }) public medications!: Medications;
+
+    // State properties
+    @state() private drillDownState: DrillDownState = { level: 'year' };
+    @state() private selectedMedications: Set<string> = new Set();
+
+    // Lifecycle methods
+    connectedCallback() {
+        super.connectedCallback();
+        window.addEventListener('popstate', this.handlePopState);
+        this.restoreStateFromUrl();
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        window.removeEventListener('popstate', this.handlePopState);
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+        }
+    }
+
+    // Render method
     render() {
         const localize = getLocalizeFunction(this.hass!);
         
@@ -325,6 +306,32 @@ export class MedilogRecordsMedications extends LitElement {
                 ` : ''}
             </div>
         `;
+    }
+
+    // Private helper methods
+    private handlePopState = (event: PopStateEvent) => {
+        if (event.state?.medicationsDrillDown) {
+            this.drillDownState = event.state.medicationsDrillDown;
+            this.requestUpdate();
+        } else {
+            this.drillDownState = { level: 'year' };
+            this.requestUpdate();
+        }
+    }
+
+    private restoreStateFromUrl() {
+        const state = history.state;
+        if (state?.medicationsDrillDown) {
+            this.drillDownState = state.medicationsDrillDown;
+        }
+    }
+
+    private pushState(newState: DrillDownState) {
+        history.pushState(
+            { medicationsDrillDown: newState },
+            '',
+            window.location.pathname + window.location.search
+        );
     }
 
     private renderBreadcrumb() {

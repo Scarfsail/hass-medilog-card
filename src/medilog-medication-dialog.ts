@@ -19,7 +19,39 @@ loadHaForm();
 
 @customElement("medilog-medication-dialog")
 export class MedilogMedicationDialog extends LitElement {
+    // Static styles
+    static styles = [sharedStyles, css`
+        .fill {
+            width: 100%;
+        }
+        .field {
+            margin-bottom: 16px;
+        }
+        .field ha-textfield {
+            min-width: 426px;
+        }
+        .error {
+            color: var(--error-color);
+            font-size: 0.875rem;
+            margin-top: 4px;
+        }
+        .checkbox-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+    `]
 
+    // Public properties
+    @property({ attribute: false }) public hass!: HomeAssistant;
+
+    // State properties
     @state() private _params?: MedicationDialogParams;
     @state() private _formData: {
         name: string;
@@ -34,8 +66,7 @@ export class MedilogMedicationDialog extends LitElement {
         };
     @state() private _errors: { [key: string]: string } = {};
 
-    @property({ attribute: false }) public hass!: HomeAssistant;
-
+    // Public methods
     public showDialog(params: MedicationDialogParams): void {
         this._params = params;
 
@@ -68,34 +99,7 @@ export class MedilogMedicationDialog extends LitElement {
         this._errors = {};
     }
 
-    static styles = [sharedStyles, css`
-        .fill {
-            width: 100%;
-        }
-        .field {
-            margin-bottom: 16px;
-        }
-        .field ha-textfield {
-            min-width: 426px;
-        }
-        .error {
-            color: var(--error-color);
-            font-size: 0.875rem;
-            margin-top: 4px;
-        }
-        .checkbox-field {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .form-container {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-    `]
-
+    // Render method
     render() {
         if (!this._params || !this.hass) {
             return nothing;
@@ -178,6 +182,7 @@ export class MedilogMedicationDialog extends LitElement {
         `;
     }
 
+    // Private helper methods
     private _validateForm(): boolean {
         this._errors = {};
 

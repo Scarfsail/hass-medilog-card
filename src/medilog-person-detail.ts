@@ -16,54 +16,7 @@ dayjs.extend(duration);
 
 @customElement("medilog-person-detail")
 export class MedilogPersonDetail extends LitElement {
-    private _person?: PersonInfo
-    @property({ attribute: false }) public set person(value: PersonInfo) {
-        const prevPerson = this._person;
-        this._person = value;
-        if (prevPerson !== value)
-            this.fetchRecords();
-    }
-    @property({ attribute: false }) public hass?: HomeAssistant;
-    @property({ attribute: false }) public medications!: Medications;
-    @state() private _records?: {
-        all: MedilogRecord[]
-        grouped: MedilogRecordsGroupByTime[]
-    };
-    @state() private viewMode: 'timeline' | 'medications' = 'timeline';
-
-    connectedCallback() {
-        super.connectedCallback();
-        this.fetchRecords();
-    }
-
-    private async fetchRecords(): Promise<void> {
-        if (!this.hass) return;
-
-        try {
-            if (!this._person || !this._person.entity) {
-                console.warn("Cannot fetch records: person is undefined or missing entity_id");
-                return;
-            }
-
-            const response = await this.hass.callService('medilog', 'get_records', { person_id: this._person.entity }, {}, true, true);
-            if (response && response.response.records) {
-                const records = (response.response.records as MedilogRecordRaw[]).map(record => convertMedilogRecordRawToMedilogRecord(record)!).sort((a, b) => b.datetime.diff(a.datetime));
-
-                this._records = {
-                    all: records,
-                    grouped: groupRecordsByPeriods(records)
-                }
-
-            }
-        } catch (error) {
-            console.error("Error fetching records:", error);
-        }
-    }
-
-    disconnectedCallback() {
-        super.disconnectedCallback();
-    }
-
+    // Static styles
     static styles = css`
         .controls {
             display: flex;
@@ -102,6 +55,37 @@ export class MedilogPersonDetail extends LitElement {
         }
     `
 
+    // Private properties
+    private _person?: PersonInfo
+
+    // Public properties
+    @property({ attribute: false }) public set person(value: PersonInfo) {
+        const prevPerson = this._person;
+        this._person = value;
+        if (prevPerson !== value)
+            this.fetchRecords();
+    }
+    @property({ attribute: false }) public hass?: HomeAssistant;
+    @property({ attribute: false }) public medications!: Medications;
+
+    // State properties
+    @state() private _records?: {
+        all: MedilogRecord[]
+        grouped: MedilogRecordsGroupByTime[]
+    };
+    @state() private viewMode: 'timeline' | 'medications' = 'timeline';
+
+    // Lifecycle methods
+    connectedCallback() {
+        super.connectedCallback();
+        this.fetchRecords();
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+    }
+
+    // Render method
     render() {
         if (!this._person) {
             return "Person is not defined";
@@ -136,6 +120,31 @@ export class MedilogPersonDetail extends LitElement {
                 <medilog-records-medications .records=${this._records.all} .hass=${this.hass} .person=${this._person} .medications=${this.medications}></medilog-records-medications>
             `}
         `
+    }
+
+    // Private helper methods
+    private async fetchRecords(): Promise<void> {
+        if (!this.hass) return;
+
+        try {
+            if (!this._person || !this._person.entity) {
+                console.warn("Cannot fetch records: person is undefined or missing entity_id");
+                return;
+            }
+
+            const response = await this.hass.callService('medilog', 'get_records', { person_id: this._person.entity }, {}, true, true);
+            if (response && response.response.records) {
+                const records = (response.response.records as MedilogRecordRaw[]).map(record => convertMedilogRecordRawToMedilogRecord(record)!).sort((a, b) => b.datetime.diff(a.datetime));
+
+                this._records = {
+                    all: records,
+                    grouped: groupRecordsByPeriods(records)
+                }
+
+            }
+        } catch (error) {
+            console.error("Error fetching records:", error);
+        }
     }
 
     private addNewRecord() {

@@ -25,14 +25,7 @@ loadHaForm();
 
 @customElement("medilog-record-detail-dialog")
 export class MedilogRecordDetailDialog extends LitElement {
-
-    @state() private _params?: MedilogRecordDetailDialogParams;
-    @state() private _editedRecord?: MedilogRecord;
-
-    @property({ attribute: false }) public hass!: HomeAssistant;
-
-
-
+    // Static styles
     static styles = [sharedStyles, css`
         .fill {
             width: 100%;
@@ -84,10 +77,21 @@ export class MedilogRecordDetailDialog extends LitElement {
             font-style: italic;
         }
     `]
+
+    // Public properties
+    @property({ attribute: false }) public hass!: HomeAssistant;
+
+    // State properties
+    @state() private _params?: MedilogRecordDetailDialogParams;
+    @state() private _editedRecord?: MedilogRecord;
+
+    // Public methods
     public showDialog(dialogParams: MedilogRecordDetailDialogParams): void {
         this._params = dialogParams;
         this._editedRecord = dialogParams.record;
     }
+
+    // Render method
     render() {
         if (!this._params || !this.hass || !this._editedRecord) {
             return nothing;
@@ -192,6 +196,7 @@ export class MedilogRecordDetailDialog extends LitElement {
 
     }
 
+    // Private helper methods
     private _getMedicationName(): string {
         if (!this._editedRecord?.medication_id) {
             return '';

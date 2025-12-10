@@ -22,81 +22,14 @@ interface MedilogCardConfig extends LovelaceCardConfig {
 
 @customElement("medilog-card")
 export class MedilogCard extends LitElement implements LovelaceCard {
-
-    private config?: MedilogCardConfig;
-    @state() private _hass?: HomeAssistant;
-    @state() private persons: PersonInfo[] = [];
-    @state() private medications?: Medications;
-    @state() private activeTab: 'person' | 'medications' = 'person';
-
-    @state() person?: PersonInfo;
-    constructor() {
-        super();
-        //dayjs.locale('cs');
-        dayjs.locale(this._hass?.locale?.language ?? 'cs')
-    }
-
-    public set hass(value: HomeAssistant) {
-        this._hass = value;
-
-    }
-
-    private async fetchPersons(): Promise<void> {
-        if (!this._hass) return;
-
-        try {
-            const response = await this._hass.callService('medilog', 'get_person_list', {}, {}, true, true);
-            if (response && response.response.persons) {
-                this.persons = (response.response.persons as PersonInfoRaw[]).map((person) => ({
-                    entity: person.entity,
-                    name: this._hass?.states[person.entity]?.attributes?.friendly_name ?? person.entity,
-                    recent_record: convertMedilogRecordRawToMedilogRecord(person.recent_record)
-                } as PersonInfo)).sort((a,b)=>a.name.localeCompare(b.name));
-                if (!this.person) {
-
-                    const personWithMostRecentRecord = [...this.persons].sort((a, b) => (a.recent_record?.datetime ?? 0) > (b.recent_record?.datetime ?? 0) ? -1 : 1)[0];
-
-                    this.person = personWithMostRecentRecord;
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching persons:", error);
-        }
-    }
-
-    handleMedicationsChanged(){
-        this.requestUpdate();
-    }
-    connectedCallback() {
-        super.connectedCallback();
-        // Fetch medications first, then persons (persons need medications for conversion)
-        
-        if (this._hass) {
-            this.medications = new Medications(this._hass, this.handleMedicationsChanged.bind(this));
-            this.medications?.fetchMedications().then(() => {
-                this.fetchPersons();
-            });
-        }
-    }
-
-    getCardSize() {
-        return this.config?.card_size ?? 1;
-    }
-
+    // Static configuration methods (HA-specific)
     public static async getStubConfig(hass: HomeAssistant): Promise<Partial<MedilogCardConfig>> {
         return {
             type: `custom:medilog-card`,
         };
     }
 
-    async setConfig(config: MedilogCardConfig) {
-        this.config = { ...config };
-    }
-
-    disconnectedCallback() {
-        super.disconnectedCallback();
-    }
-
+    // Static styles
     static styles = [sharedStyles, css`
     ha-card {
         overflow-x: auto;
@@ -180,11 +113,57 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         width: fit-content;
     }
     
-`]
+    `]
 
-    render() {
+    // Private config
+    private config?: MedilogCardConfig;
 
-        if (!this.config) {
+    // State properties
+    @state() private _hass?: HomeAssistant;
+    @state() private persons: PersonInfo[] = [];
+    @state() private medications?: Medications;
+    @state() private activeTab: 'person' | 'medications' = 'person';
+    @state() person?: PersonInfo;
+
+    // Constructor
+    constructor() {
+        super();
+        dayjs.locale(this._hass?.locale?.language ?? 'cs')
+    }
+
+    // HA-specific property setter
+    public set hass(value: HomeAssistant) {
+        this._hass = value;
+    }
+
+    // HA-specific methods
+    async setConfig(config: MedilogCardConfig) {
+        this.config = { ...config };
+    }
+
+    getCardSize() {
+        return this.config?.card_size ?? 1;
+    }
+
+    // Lifecycle methods
+    connectedCallback() {
+        super.connectedCallback();
+        // Fetch medications first, then persons (persons need medications for conversion)
+        
+        if (this._hass) {
+            this.medications = new Medications(this._hass, this.handleMedicationsChanged.bind(this));
+            this.medications?.fetchMedications().then(() => {
+                this.fetchPersons();
+            });
+        }
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+    }
+
+    // Render method
+    render() {        if (!this.config) {
             return "Config is not defined";
         }
 
@@ -230,8 +209,37 @@ export class MedilogCard extends LitElement implements LovelaceCard {
             </ha-card>
         `
     }
+
+    // Private helper methods
+    private async fetchPersons(): Promise<void> {
+        if (!this._hass) return;
+
+        try {
+            const response = await this._hass.callService('medilog', 'get_person_list', {}, {}, true, true);
+            if (response && response.response.persons) {
+                this.persons = (response.response.persons as PersonInfoRaw[]).map((person) => ({
+                    entity: person.entity,
+                    name: this._hass?.states[person.entity]?.attributes?.friendly_name ?? person.entity,
+                    recent_record: convertMedilogRecordRawToMedilogRecord(person.recent_record)
+                } as PersonInfo)).sort((a,b)=>a.name.localeCompare(b.name));
+                if (!this.person) {
+
+                    const personWithMostRecentRecord = [...this.persons].sort((a, b) => (a.recent_record?.datetime ?? 0) > (b.recent_record?.datetime ?? 0) ? -1 : 1)[0];
+
+                    this.person = personWithMostRecentRecord;
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching persons:", error);
+        }
+    }
+
+    handleMedicationsChanged(){
+        this.requestUpdate();
+    }
 }
 
+// Card registration
 (window as any).customCards = (window as any).customCards || [];
 (window as any).customCards.push({
     type: 'medilog-card',

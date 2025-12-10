@@ -8,18 +8,34 @@ import { Medications } from './medications';
 type ApexCharts = any;
 @customElement("medilog-records-chart")
 class MedilogRecordsChart extends LitElement {
+    // Private properties
+    private chart?: ApexCharts;
 
+    // Public properties
     @property({ attribute: false }) public records: (MedilogRecord | null)[] = [];
     @property({ attribute: false }) public medications!: Medications;
+
+    // Query properties
     @query('#chart') private chartElement?: HTMLElement;
 
-    private chart?: ApexCharts;
+    // Lifecycle methods
     updated(changedProperties: Map<string, any>) {
         if (changedProperties.has('records')) {
             this.createChart();
         }
     }
 
+    disconnectedCallback(): void {
+        super.disconnectedCallback();
+        this.chart?.destroy();
+    }
+
+    // Render method
+    render() {
+        return html`<div id="chart"></div>`;
+    }
+
+    // Private helper methods
     createChart() {
         if (this.chart)
             this.chart.destroy();
@@ -110,14 +126,5 @@ class MedilogRecordsChart extends LitElement {
         }
         this.chart = new ApexChartsLib(this.chartElement, options);
         this.chart.render();
-    }
-
-    disconnectedCallback(): void {
-        super.disconnectedCallback();
-        this.chart?.destroy();
-    }
-
-    render() {
-        return html`<div id="chart"></div>`;
     }
 }

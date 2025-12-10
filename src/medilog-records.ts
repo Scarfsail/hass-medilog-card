@@ -11,17 +11,22 @@ import { Medications } from "./medications";
 
 @customElement("medilog-records")
 export class MedilogRecords extends LitElement {
+    // Static styles
+    static styles = css`
+    
+    `
+
+    // Public properties
     @property({ attribute: false }) public person?: PersonInfo
     @property({ attribute: false }) public allRecords?: MedilogRecord[]
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
     @property({ attribute: false }) public medications!: Medications;
+
+    // State properties
     @state() private visualization: 'chart' | 'table' = 'table';
 
-    static styles = css`
-    
-    `
-
+    // Render method
     render() {
         if (!this.person) {
             return "Person is not defined";

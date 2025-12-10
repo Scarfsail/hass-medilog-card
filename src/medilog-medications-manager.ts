@@ -10,39 +10,7 @@ import { Medications } from "./medications";
 
 @customElement("medilog-medications-manager")
 export class MedilogMedicationsManager extends LitElement {
-
-    @property({ attribute: false }) public hass?: HomeAssistant;
-    @property({ attribute: false }) public medications!: Medications;
-    @state() private _filterName: string = '';
-    @state() private _filterUnits: string = '';
-    @state() private _filterAntipyretic: string = '';
-    @state() private _filterIngredient: string = '';
-
-    private _getFilteredMedications(): Medication[] {
-        const localize = getLocalizeFunction(this.hass!);
-        
-        return this.medications?.all
-            .filter(med => {
-                const matchesName = !this._filterName.trim() || 
-                    med.name.toLowerCase().includes(this._filterName.toLowerCase());
-                
-                const matchesUnits = !this._filterUnits.trim() || 
-                    (med.units?.toLowerCase().includes(this._filterUnits.toLowerCase()) ?? false);
-                
-                const antipyreticText = med.is_antipyretic 
-                    ? localize('medications_manager.yes').toLowerCase()
-                    : localize('medications_manager.no').toLowerCase();
-                const matchesAntipyretic = !this._filterAntipyretic.trim() || 
-                    antipyreticText.includes(this._filterAntipyretic.toLowerCase());
-                
-                const matchesIngredient = !this._filterIngredient.trim() || 
-                    (med.active_ingredient?.toLowerCase().includes(this._filterIngredient.toLowerCase()) ?? false);
-                
-                return matchesName && matchesUnits && matchesAntipyretic && matchesIngredient;
-            })
-            .sort((a, b) => a.name.localeCompare(b.name));
-    }
-
+    // Static styles
     static styles = [sharedStyles, sharedTableStyles, css`
         .container {
             padding: 16px;
@@ -104,6 +72,17 @@ export class MedilogMedicationsManager extends LitElement {
         }
     `]
 
+    // Public properties
+    @property({ attribute: false }) public hass?: HomeAssistant;
+    @property({ attribute: false }) public medications!: Medications;
+
+    // State properties
+    @state() private _filterName: string = '';
+    @state() private _filterUnits: string = '';
+    @state() private _filterAntipyretic: string = '';
+    @state() private _filterIngredient: string = '';
+
+    // Render method
     render() {
         if (!this.hass) {
             return nothing;
@@ -199,6 +178,33 @@ export class MedilogMedicationsManager extends LitElement {
                 `}
             </div>
         `;
+    }
+
+    // Private helper methods
+    private _getFilteredMedications(): Medication[] {
+        const localize = getLocalizeFunction(this.hass!);
+        
+        return this.medications?.all
+            .filter(med => {
+                const matchesName = !this._filterName.trim() || 
+                    med.name.toLowerCase().includes(this._filterName.toLowerCase());
+                
+                const matchesUnits = !this._filterUnits.trim() || 
+                    (med.units?.toLowerCase().includes(this._filterUnits.toLowerCase()) ?? false);
+                
+                const antipyreticText = med.is_antipyretic 
+                    ? localize('medications_manager.yes').toLowerCase()
+                    : localize('medications_manager.no').toLowerCase();
+                const matchesAntipyretic = !this._filterAntipyretic.trim() || 
+                    antipyreticText.includes(this._filterAntipyretic.toLowerCase());
+                
+                const matchesIngredient = !this._filterIngredient.trim() || 
+                    (med.active_ingredient?.toLowerCase().includes(this._filterIngredient.toLowerCase()) ?? false);
+                
+                return matchesName && matchesUnits && matchesAntipyretic && matchesIngredient;
+            })
+            .sort((a, b) => a.name.localeCompare(b.name));
+
     }
 
     private _handleAdd() {

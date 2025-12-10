@@ -13,12 +13,7 @@ import { sharedTableStyles } from "./shared-styles";
 
 @customElement("medilog-records-table")
 export class MedilogRecordsTable extends LitElement {
-    @property({ attribute: false }) public person?: PersonInfo
-    @property({ attribute: false }) public hass?: HomeAssistant;
-    @property({ attribute: false }) public allRecords?: MedilogRecord[]
-    @property({ attribute: false }) public records?: (MedilogRecord | null)[];
-    @property({ attribute: false }) public medications!: Medications;
-
+    // Static styles
     static styles = [sharedTableStyles, css`
         .record-table tbody tr:not(.day-separator) td:first-child {
             border-bottom: none;
@@ -84,6 +79,14 @@ export class MedilogRecordsTable extends LitElement {
         }
     `]
 
+    // Public properties
+    @property({ attribute: false }) public person?: PersonInfo
+    @property({ attribute: false }) public hass?: HomeAssistant;
+    @property({ attribute: false }) public allRecords?: MedilogRecord[]
+    @property({ attribute: false }) public records?: (MedilogRecord | null)[];
+    @property({ attribute: false }) public medications!: Medications;
+
+    // Render method
     render() {
         if (!this.person) {
             return "Person is not defined";
@@ -139,6 +142,7 @@ export class MedilogRecordsTable extends LitElement {
         `
     }
 
+    // Private helper methods
     private getMedicationName(record: MedilogRecord): string {
         return this.medications.getMedicationName(record.medication_id);
     }

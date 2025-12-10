@@ -19,75 +19,7 @@ export interface MedicationPickerParams {
 
 @customElement("medilog-medication-picker")
 export class MedilogMedicationPicker extends LitElement {
-
-    @state() private _params?: MedicationPickerParams;
-    @state() private _filterText: string = '';
-    @state() private _sortedMedications: Array<{ med: Medication, lastTaken?: dayjs.Dayjs }> = [];
-
-    @property({ attribute: false }) public hass!: HomeAssistant;
-
-    public showDialog(params: MedicationPickerParams): void {
-        this._params = params;
-        this._filterText = '';
-        this._calculateSortedMedications();
-    }
-
-    private _calculateSortedMedications() {
-        if (!this._params?.medications) {
-            this._sortedMedications = [];
-            return;
-        }
-
-        // Build usage map from person's records
-        const usageMap = new Map<string, dayjs.Dayjs>();
-        this._params.allRecords?.forEach(record => {
-            if (record.medication_id) {
-                const existing = usageMap.get(record.medication_id);
-                if (!existing || record.datetime.isAfter(existing)) {
-                    usageMap.set(record.medication_id, record.datetime);
-                }
-            }
-        });
-
-        // Separate into used and unused groups
-        const used: Array<{ med: Medication, lastTaken: dayjs.Dayjs }> = [];
-        const unused: Array<{ med: Medication }> = [];
-
-        this._params.medications.all.forEach(med => {
-            const lastUsed = usageMap.get(med.id);
-            if (lastUsed) {
-                used.push({ med, lastTaken: lastUsed });
-            } else {
-                unused.push({ med });
-            }
-        });
-
-        // Sort each group
-        used.sort((a, b) => b.lastTaken.diff(a.lastTaken)); // Most recent first
-        unused.sort((a, b) => a.med.name.localeCompare(b.med.name)); // Alphabetical
-
-        // Combine
-        this._sortedMedications = [...used, ...unused];
-    }
-
-    private _getFilteredMedications(): Array<{ med: Medication, lastTaken?: dayjs.Dayjs }> {
-        if (!this._filterText.trim()) {
-            return this._sortedMedications;
-        }
-
-        const filter = this._filterText.toLowerCase();
-        return this._sortedMedications.filter(item =>
-            item.med.name.toLowerCase().includes(filter) ||
-            item.med.units?.toLowerCase().includes(filter) ||
-            item.med.active_ingredient?.toLowerCase().includes(filter)
-        );
-    }
-
-    private _shouldShowAddNew(): boolean {
-        // Always show "Add new" button
-        return true;
-    }
-
+    // Static styles
     static styles = [sharedStyles, sharedTableStyles, css`
         .dialog-content {
             display: flex;
@@ -161,6 +93,22 @@ export class MedilogMedicationPicker extends LitElement {
         }
     `]
 
+    // Public properties
+    @property({ attribute: false }) public hass!: HomeAssistant;
+
+    // State properties
+    @state() private _params?: MedicationPickerParams;
+    @state() private _filterText: string = '';
+    @state() private _sortedMedications: Array<{ med: Medication, lastTaken?: dayjs.Dayjs }> = [];
+
+    // Public methods
+    public showDialog(params: MedicationPickerParams): void {
+        this._params = params;
+        this._filterText = '';
+        this._calculateSortedMedications();
+    }
+
+    // Render method
     render() {
         if (!this._params || !this.hass) {
             return nothing;
@@ -217,6 +165,63 @@ export class MedilogMedicationPicker extends LitElement {
                 </div>
             </ha-dialog>
         `;
+    }
+
+    // Private helper methods
+    private _calculateSortedMedications() {
+        if (!this._params?.medications) {
+            this._sortedMedications = [];
+            return;
+        }
+
+        // Build usage map from person's records
+        const usageMap = new Map<string, dayjs.Dayjs>();
+        this._params.allRecords?.forEach(record => {
+            if (record.medication_id) {
+                const existing = usageMap.get(record.medication_id);
+                if (!existing || record.datetime.isAfter(existing)) {
+                    usageMap.set(record.medication_id, record.datetime);
+                }
+            }
+        });
+
+        // Separate into used and unused groups
+        const used: Array<{ med: Medication, lastTaken: dayjs.Dayjs }> = [];
+        const unused: Array<{ med: Medication }> = [];
+
+        this._params.medications.all.forEach(med => {
+            const lastUsed = usageMap.get(med.id);
+            if (lastUsed) {
+                used.push({ med, lastTaken: lastUsed });
+            } else {
+                unused.push({ med });
+            }
+        });
+
+        // Sort each group
+        used.sort((a, b) => b.lastTaken.diff(a.lastTaken)); // Most recent first
+        unused.sort((a, b) => a.med.name.localeCompare(b.med.name)); // Alphabetical
+
+        // Combine
+        this._sortedMedications = [...used, ...unused];
+    }
+
+    private _getFilteredMedications(): Array<{ med: Medication, lastTaken?: dayjs.Dayjs }> {
+        if (!this._filterText.trim()) {
+            return this._sortedMedications;
+        }
+
+        const filter = this._filterText.toLowerCase();
+        return this._sortedMedications.filter(item =>
+            item.med.name.toLowerCase().includes(filter) ||
+            item.med.units?.toLowerCase().includes(filter) ||
+            item.med.active_ingredient?.toLowerCase().includes(filter)
+        );
+    }
+
+    private _shouldShowAddNew(): boolean {
+        // Always show "Add new" button
+        return true;
     }
 
     private _handleKeyDown(e: KeyboardEvent) {
