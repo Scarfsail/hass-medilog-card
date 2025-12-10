@@ -84,12 +84,7 @@ export class MedilogMedicationPicker extends LitElement {
     }
 
     private _shouldShowAddNew(): boolean {
-        if (!this._filterText.trim()) {
-            return false;
-        }
-
-        // Always show "Add new" button when there's filter text
-        // This allows users to quickly add medications even if similar ones exist
+        // Always show "Add new" button
         return true;
     }
 
@@ -176,12 +171,7 @@ export class MedilogMedicationPicker extends LitElement {
         const showAddNew = this._shouldShowAddNew();
 
         return html`
-            <ha-dialog open .heading=${true} @closed=${this._handleClose} @close-dialog=${this._handleClose} @opened=${this._handleOpened}>
-                <ha-dialog-header slot="heading">
-                    <ha-icon-button slot="navigationIcon" dialogAction="cancel" .path=${mdiClose}></ha-icon-button>
-                    <span slot="title">${localize('medication_picker.title')}</span>
-                </ha-dialog-header>
-                
+            <ha-dialog open .heading=${false} @closed=${this._handleClose} @close-dialog=${this._handleClose} @opened=${this._handleOpened}>
                 <div class="dialog-content">
                     <div class="filter-container">
                         <ha-textfield
