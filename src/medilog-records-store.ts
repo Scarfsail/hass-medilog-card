@@ -7,13 +7,15 @@ import { MedilogPersonRecordsStore } from "./medilog-person-records-store";
  * Returns MedilogPersonRecordsStore instances that handle their own CRUD operations.
  * This object is passed by reference, so when records are updated,
  * all components automatically see the fresh data.
+ * Extends EventTarget to dispatch 'records-changed' events when data changes.
  */
-export class MedilogRecords {
+export class MedilogRecords extends EventTarget {
     private _storesByPerson: Map<string, MedilogPersonRecordsStore> = new Map();
     private _hass: HomeAssistant;
     private _onRecordsChanged: () => void;
 
     constructor(hass: HomeAssistant, onRecordsChanged: () => void) {
+        super();
         this._storesByPerson = new Map();
         this._hass = hass;
         this._onRecordsChanged = onRecordsChanged;
@@ -29,8 +31,12 @@ export class MedilogRecords {
         let store = this._storesByPerson.get(person.entity);
         
         if (!store) {
-            // Create new store
-            store = new MedilogPersonRecordsStore(person.entity, this._hass, this._onRecordsChanged);
+            // Create new store with callback that triggers both the main callback and event dispatch
+            const onChanged = () => {
+                this._onRecordsChanged();
+                this.dispatchEvent(new CustomEvent('records-changed'));
+            };
+            store = new MedilogPersonRecordsStore(person.entity, this._hass, onChanged);
             await store.fetch();
             this._storesByPerson.set(person.entity, store);
         }

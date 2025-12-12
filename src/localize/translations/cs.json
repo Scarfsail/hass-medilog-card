@@ -60,6 +60,14 @@
     "yes": "Ano",
     "no": "Ne"
   },
+  "medications_usage": {
+    "select_medication": "Vyberte lék",
+    "select_placeholder": "-- Vyberte lék --",
+    "select_medication_prompt": "Vyberte lék pro zobrazení historie použití",
+    "no_usage_data": "Žádné záznamy pro vybraný lék",
+    "record": "záznam",
+    "records": "záznamů"
+  },
   "table": {
     "datetime": "Datum a čas",
     "before": "Před",
