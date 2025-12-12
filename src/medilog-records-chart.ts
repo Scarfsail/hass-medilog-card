@@ -48,9 +48,13 @@ class MedilogRecordsChart extends LitElement {
                 y: record.temperature
             }));
 
-        // Create annotations for medication events (records with medication)
+        // Create annotations for medication events (only antipyretic medications)
         const medicationAnnotations = records
-            .filter(record => record.medication_id)
+            .filter(record => {
+                if (!record.medication_id) return false;
+                const medication = this.medications.getMedication(record.medication_id);
+                return medication?.is_antipyretic === true;
+            })
             .map(record => ({
                 x: record.datetime.valueOf(),
                 borderColor: '#FF4560',
