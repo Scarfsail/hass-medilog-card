@@ -5,7 +5,7 @@ import { Medication, MedilogRecord, PersonInfo } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { getLocalizeFunction } from "./localize/localize";
 import "./medilog-records-table";
-import { Medications } from "./medications";
+import { MedicationsStore } from "./medications-store";
 
 type DrillDownLevel = 'year' | 'month' | 'day' | 'hour';
 
@@ -203,7 +203,7 @@ export class MedilogRecordsMedications extends LitElement {
     @property({ attribute: false }) public person?: PersonInfo
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
-    @property({ attribute: false }) public medications!: Medications;
+    @property({ attribute: false }) public medications!: MedicationsStore;
 
     // State properties
     @state() private drillDownState: DrillDownState = { level: 'year' };

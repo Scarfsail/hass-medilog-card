@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
 import duration from 'dayjs/plugin/duration'
 import isoWeek from 'dayjs/plugin/isoWeek'
+import { MedilogRecord, MedilogRecordRaw } from './models';
 
 dayjs.extend(duration);
 dayjs.extend(isoWeek);
@@ -120,5 +121,21 @@ export class Utils {
     public static formatDate(date: dayjs.Dayjs | Date, omitYearIfItsThisYear = true, addSpacesAfterDots = true): string {
         const dot = addSpacesAfterDots ? '. ' : '.';
         return dayjs(date).format(`D${dot}M${omitYearIfItsThisYear && dayjs(date).year() === dayjs().year() ? '' : `${dot}YYYY`}`)
+    }
+
+    /**
+     * Convert a raw medilog record from API to a typed MedilogRecord with dayjs datetime.
+     */
+    public static convertMedilogRecordRawToMedilogRecord(record: MedilogRecordRaw | null): MedilogRecord | null {
+        if (!record)
+            return null;
+
+        return {
+            ...record,
+            temperature: record.temperature === null ? undefined : record.temperature,
+            medication_id: record.medication_id === null ? undefined : record.medication_id,
+            medication_amount: record.medication_amount ?? 1,
+            datetime: dayjs(record.datetime)
+        } as MedilogRecord
     }
 }

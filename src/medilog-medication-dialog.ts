@@ -6,11 +6,11 @@ import { mdiClose } from '@mdi/js';
 import { sharedStyles } from "./shared-styles";
 import { loadHaForm } from "./load-ha-elements";
 import { getLocalizeFunction } from "./localize/localize";
-import { Medications } from "./medications";
+import { MedicationsStore } from "./medications-store";
 
 export interface MedicationDialogParams {
     medication?: Medication;
-    medications: Medications;
+    medications: MedicationsStore;
     initialName?: string;
     onClose: (changed: boolean) => void;
 }
@@ -207,7 +207,7 @@ export class MedilogMedicationDialog extends LitElement {
     }
 
     private async _handleSave() {
-        if (!this.hass || !this._params) return;
+        if (!this._params) return;
 
         if (!this._validateForm()) {
             this.requestUpdate();
@@ -215,7 +215,7 @@ export class MedilogMedicationDialog extends LitElement {
         }
 
         try {
-            const medicationData: any = {
+            const medicationData: Partial<Medication> = {
                 name: this._formData.name.trim(),
                 units: this._formData.units.trim() || undefined,
                 is_antipyretic: this._formData.is_antipyretic,
@@ -227,16 +227,7 @@ export class MedilogMedicationDialog extends LitElement {
                 medicationData.id = this._params.medication.id;
             }
 
-            await this.hass.callService(
-                'medilog',
-                'add_or_update_medication',
-                medicationData,
-                {},
-                true,
-                false
-            );
-
-            await this._params?.medications.fetchMedications(); //Refetch medications
+            await this._params.medications.saveMedication(medicationData);
             this._handleClose(true);
         } catch (error) {
             console.error('Error saving medication:', error);
@@ -246,7 +237,7 @@ export class MedilogMedicationDialog extends LitElement {
     }
 
     private async _handleDelete() {
-        if (!this.hass || !this._params?.medication) return;
+        if (!this._params?.medication) return;
 
         const localize = getLocalizeFunction(this.hass!);
         const confirmMessage = localize('medications_manager.delete_confirm').replace('{name}', this._params.medication.name);
@@ -256,16 +247,7 @@ export class MedilogMedicationDialog extends LitElement {
         }
 
         try {
-            await this.hass.callService(
-                'medilog',
-                'delete_medication',
-                { id: this._params.medication.id },
-                {},
-                true,
-                false
-            );
-
-            await this._params?.medications.fetchMedications();
+            await this._params.medications.deleteMedication(this._params.medication.id);
             this._handleClose(true);
         } catch (error) {
             console.error('Error deleting medication:', error);

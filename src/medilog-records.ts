@@ -7,7 +7,7 @@ import "./medilog-records-chart"
 import "./medilog-records-table"
 import "./medilog-records-medications"
 import { getLocalizeFunction } from "./localize/localize";
-import { Medications } from "./medications";
+import { DataStore } from "./data-store";
 
 @customElement("medilog-records")
 export class MedilogRecords extends LitElement {
@@ -18,10 +18,9 @@ export class MedilogRecords extends LitElement {
 
     // Public properties
     @property({ attribute: false }) public person?: PersonInfo
-    @property({ attribute: false }) public allRecords?: MedilogRecord[]
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
-    @property({ attribute: false }) public medications!: Medications;
+    @property({ attribute: false }) public dataStore!: DataStore;
 
     // State properties
     @state() private visualization: 'chart' | 'table' = 'table';
@@ -44,9 +43,9 @@ export class MedilogRecords extends LitElement {
             </div>
             
             ${this.visualization === 'table'
-                ? html`<medilog-records-table .records=${this.records} .hass=${this.hass} .person=${this.person} .allRecords=${this.allRecords} .medications=${this.medications}></medilog-records-table>`
+                ? html`<medilog-records-table .records=${this.records} .hass=${this.hass} .person=${this.person} .dataStore=${this.dataStore}></medilog-records-table>`
                 : this.visualization === 'chart'
-                ? html`<medilog-records-chart .records=${this.records} .medications=${this.medications}></medilog-records-chart>`
+                ? html`<medilog-records-chart .records=${this.records} .medications=${this.dataStore.medications}></medilog-records-chart>`
                 : html`<div>Unknown visualization: ${this.visualization}</div>`
             }
         `;

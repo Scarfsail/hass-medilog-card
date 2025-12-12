@@ -6,7 +6,7 @@ import { mdiPlus } from '@mdi/js';
 import { sharedStyles, sharedTableStyles } from "./shared-styles";
 import { getLocalizeFunction } from "./localize/localize";
 import "./medilog-medication-dialog";
-import { Medications } from "./medications";
+import { MedicationsStore } from "./medications-store";
 
 @customElement("medilog-medications-manager")
 export class MedilogMedicationsManager extends LitElement {
@@ -74,7 +74,7 @@ export class MedilogMedicationsManager extends LitElement {
 
     // Public properties
     @property({ attribute: false }) public hass?: HomeAssistant;
-    @property({ attribute: false }) public medications!: Medications;
+    @property({ attribute: false }) public medications!: MedicationsStore;
 
     // State properties
     @state() private _filterName: string = '';

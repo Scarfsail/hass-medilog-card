@@ -11,7 +11,8 @@ import "./medilog-records"
 import "./medilog-records-medications"
 import { showMedilogRecordDetailDialog } from "./medilog-records-table";
 import { Utils } from "./utils";
-import { Medications } from "./medications";
+import { DataStore } from "./data-store";
+import { MedilogPersonRecordsStore } from "./medilog-person-records-store";
 dayjs.extend(duration);
 
 @customElement("medilog-person-detail")
@@ -57,28 +58,25 @@ export class MedilogPersonDetail extends LitElement {
 
     // Private properties
     private _person?: PersonInfo
+    private _personStore?: MedilogPersonRecordsStore
 
     // Public properties
     @property({ attribute: false }) public set person(value: PersonInfo) {
         const prevPerson = this._person;
         this._person = value;
         if (prevPerson !== value)
-            this.fetchRecords();
+            this.loadPersonStore();
     }
     @property({ attribute: false }) public hass?: HomeAssistant;
-    @property({ attribute: false }) public medications!: Medications;
+    @property({ attribute: false }) public dataStore!: DataStore;
 
     // State properties
-    @state() private _records?: {
-        all: MedilogRecord[]
-        grouped: MedilogRecordsGroupByTime[]
-    };
     @state() private viewMode: 'timeline' | 'medications' = 'timeline';
 
     // Lifecycle methods
     connectedCallback() {
         super.connectedCallback();
-        this.fetchRecords();
+        this.loadPersonStore();
     }
 
     disconnectedCallback() {
@@ -90,7 +88,7 @@ export class MedilogPersonDetail extends LitElement {
         if (!this._person) {
             return "Person is not defined";
         }
-        if (!this._records) {
+        if (!this._personStore) {
             return html`<ha-circular-progress active></ha-circular-progress>`;
         }
 
@@ -111,98 +109,47 @@ export class MedilogPersonDetail extends LitElement {
             </div>
             
             ${this.viewMode === 'timeline' ? html`
-                ${this._records.grouped.map((group, idx) => html`
+                ${this._personStore.grouped.map((group, idx) => html`
                     <ha-expansion-panel .outlined=${true} .expanded=${idx == 0} header=${group.from ? `${Utils.formatDate(group.from)} - ${Utils.formatDate(group.to)}` : Utils.formatDate(group.to)}>
-                        <medilog-records .records=${group.records} .allRecords=${this._records?.all} .hass=${this.hass} .person=${this._person} .medications=${this.medications} @records-changed=${() => this.fetchRecords()}></medilog-records>
+                        <medilog-records .records=${group.records} .hass=${this.hass} .person=${this._person} .dataStore=${this.dataStore}></medilog-records>
                     </ha-expansion-panel>
                 `)}
             ` : html`
-                <medilog-records-medications .records=${this._records.all} .hass=${this.hass} .person=${this._person} .medications=${this.medications}></medilog-records-medications>
+                <medilog-records-medications .records=${this._personStore.all} .hass=${this.hass} .person=${this._person} .medications=${this.dataStore.medications}></medilog-records-medications>
             `}
         `
     }
 
     // Private helper methods
-    private async fetchRecords(): Promise<void> {
-        if (!this.hass) return;
+    private async loadPersonStore(): Promise<void> {
+        if (!this.hass || !this._person || !this.dataStore) return;
 
         try {
-            if (!this._person || !this._person.entity) {
-                console.warn("Cannot fetch records: person is undefined or missing entity_id");
+            if (!this._person.entity) {
+                console.warn("Cannot load records: person is missing entity_id");
                 return;
             }
 
-            const response = await this.hass.callService('medilog', 'get_records', { person_id: this._person.entity }, {}, true, true);
-            if (response && response.response.records) {
-                const records = (response.response.records as MedilogRecordRaw[]).map(record => convertMedilogRecordRawToMedilogRecord(record)!).sort((a, b) => b.datetime.diff(a.datetime));
+            // Get the store for this person (lazy loads if needed)
+            this._personStore = await this.dataStore.records.getStoreForPerson(this._person);
+            this.requestUpdate();
 
-                this._records = {
-                    all: records,
-                    grouped: groupRecordsByPeriods(records)
-                }
-
-            }
         } catch (error) {
-            console.error("Error fetching records:", error);
+            console.error("Error loading person store:", error);
         }
     }
 
     private addNewRecord() {
         showMedilogRecordDetailDialog(this, {
-            personId: this._person?.entity || '',
-            medications: this.medications,
-            closed: (changed) => {
-                if (changed) {
-                    this.fetchRecords();
-                }
-            },
+            personStore: this._personStore!,
+            medications: this.dataStore.medications,
             record: {
                 datetime: dayjs(),
                 temperature: undefined,
                 medication_id: undefined,
                 note: ''
-            },
-            allRecords: this._records?.all
+            }
         })
 
     }
-}
-
-
-
-function groupRecordsByPeriods(records: MedilogRecord[]): MedilogRecordsGroupByTime[] {
-    const groups: MedilogRecordsGroupByTime[] = [];
-    let prevTime: dayjs.Dayjs | null = null;
-    for (const record of records) {
-        const recordTime = dayjs(record.datetime);
-        if (prevTime == null || prevTime.diff(recordTime, "days") > 1) {
-            groups.push({
-                from: null,
-                to: recordTime,
-                records: []
-            })
-        }
-        const lastGroup = groups[groups.length - 1]
-        if (prevTime != null && prevTime.day() != recordTime.day() && lastGroup.records.length > 0) {
-            lastGroup.records.push(null);
-        }
-        prevTime = recordTime;
-        lastGroup.records.push(record);
-        lastGroup.from = prevTime;
-    }
-
-    return groups;
-}
-
-export function convertMedilogRecordRawToMedilogRecord(record: MedilogRecordRaw | null): MedilogRecord | null {
-    if (!record)
-        return null;
-
-    return {
-        ...record,
-        temperature:record.temperature === null ? undefined : record.temperature,
-        medication_id:record.medication_id === null ? undefined : record.medication_id,
-        medication_amount:record.medication_amount ?? 1,
-        datetime: dayjs(record.datetime)
-    } as MedilogRecord
 }

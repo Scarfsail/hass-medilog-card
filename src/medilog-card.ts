@@ -10,9 +10,8 @@ import { PersonInfo, PersonInfoRaw, Medication } from "./models";
 import "./medilog-person-detail"
 import "./medilog-medications-manager"
 import { sharedStyles } from "./shared-styles";
-import { convertMedilogRecordRawToMedilogRecord } from "./medilog-person-detail";
 import { getLocalizeFunction } from "./localize/localize";
-import { Medications } from "./medications";
+import { DataStore } from "./data-store";
 dayjs.extend(duration);
 
 interface MedilogCardConfig extends LovelaceCardConfig {
@@ -120,8 +119,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
 
     // State properties
     @state() private _hass?: HomeAssistant;
-    @state() private persons: PersonInfo[] = [];
-    @state() private medications?: Medications;
+    @state() private dataStore?: DataStore;
     @state() private activeTab: 'person' | 'medications' = 'person';
     @state() person?: PersonInfo;
 
@@ -148,12 +146,14 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     // Lifecycle methods
     connectedCallback() {
         super.connectedCallback();
-        // Fetch medications first, then persons (persons need medications for conversion)
         
         if (this._hass) {
-            this.medications = new Medications(this._hass, this.handleMedicationsChanged.bind(this));
-            this.medications?.fetchMedications().then(() => {
-                this.fetchPersons();
+            this.dataStore = new DataStore(this._hass, this.handleDataChanged.bind(this));
+            this.dataStore.initialize().then(() => {
+                // After initialization, select the person with most recent record
+                if (!this.person && this.dataStore) {
+                    this.person = this.dataStore.persons.getPersonWithMostRecentRecord();
+                }
             });
         }
     }
@@ -169,8 +169,12 @@ export class MedilogCard extends LitElement implements LovelaceCard {
 
         const localize = getLocalizeFunction(this._hass!);
 
-        // Convert persons array to format expected by ha-combo-box
-        const personItems = this.persons.map(person => ({
+        if (!this.dataStore) {
+            return html`<ha-card><ha-circular-progress active></ha-circular-progress></ha-card>`;
+        }
+
+        // Convert persons array to format expected by tabs
+        const personItems = this.dataStore.persons.all.map(person => ({
             value: person.entity,
             label: person.name
         }));
@@ -187,7 +191,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                             style="z-index: ${isActive ? personItems.length + 1 : index};"
                             @click=${() => {
                                 this.activeTab = 'person';
-                                this.person = this.persons.find(p => p.entity === person.value);
+                                this.person = this.dataStore!.persons.getPerson(person.value);
                             }}
                         >${person.label}</div>`
                     })}
@@ -201,9 +205,9 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                 </div>
                 <div class="tab-content">
                     ${this.activeTab === 'person' && this.person 
-                        ? html`<medilog-person-detail .person=${this.person} .medications=${this.medications!} .hass=${this._hass}></medilog-person-detail>` 
+                        ? html`<medilog-person-detail .person=${this.person} .dataStore=${this.dataStore!} .hass=${this._hass}></medilog-person-detail>` 
                         : this.activeTab === 'medications'
-                        ? html`<medilog-medications-manager .medications=${this.medications!} .hass=${this._hass}></medilog-medications-manager>`
+                        ? html`<medilog-medications-manager .medications=${this.dataStore!.medications} .hass=${this._hass}></medilog-medications-manager>`
                         : 'No person selected'}
                 </div>
             </ha-card>
@@ -211,30 +215,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     }
 
     // Private helper methods
-    private async fetchPersons(): Promise<void> {
-        if (!this._hass) return;
-
-        try {
-            const response = await this._hass.callService('medilog', 'get_person_list', {}, {}, true, true);
-            if (response && response.response.persons) {
-                this.persons = (response.response.persons as PersonInfoRaw[]).map((person) => ({
-                    entity: person.entity,
-                    name: this._hass?.states[person.entity]?.attributes?.friendly_name ?? person.entity,
-                    recent_record: convertMedilogRecordRawToMedilogRecord(person.recent_record)
-                } as PersonInfo)).sort((a,b)=>a.name.localeCompare(b.name));
-                if (!this.person) {
-
-                    const personWithMostRecentRecord = [...this.persons].sort((a, b) => (a.recent_record?.datetime ?? 0) > (b.recent_record?.datetime ?? 0) ? -1 : 1)[0];
-
-                    this.person = personWithMostRecentRecord;
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching persons:", error);
-        }
-    }
-
-    handleMedicationsChanged(){
+    private handleDataChanged(): void {
         this.requestUpdate();
     }
 }

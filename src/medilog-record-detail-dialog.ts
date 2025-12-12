@@ -9,16 +9,15 @@ import { loadHaForm, loadHaYamlEditor } from "./load-ha-elements";
 import { getLocalizeFunction } from "./localize/localize";
 import { Utils } from "./utils";
 import "./medilog-medication-dialog";
-import { Medications } from "./medications";
+import { MedicationsStore } from "./medications-store";
 import { showMedicationDialog } from "./medilog-medications-manager";
 import { showMedicationPicker } from "./medilog-medication-picker";
+import { MedilogPersonRecordsStore } from "./medilog-person-records-store";
 
 export interface MedilogRecordDetailDialogParams {
     record: MedilogRecord;
-    personId: string;
-    medications: Medications;
-    allRecords?: MedilogRecord[];
-    closed: (changed: boolean) => void;
+    personStore: MedilogPersonRecordsStore;
+    medications: MedicationsStore;
 }
 
 loadHaForm();
@@ -211,8 +210,8 @@ export class MedilogRecordDetailDialog extends LitElement {
 
         showMedicationPicker(this, {
             medications: this._params.medications,
-            personId: this._params.personId,
-            allRecords: this._params.allRecords ?? [],
+            personId: this._params.personStore.personEntity,
+            allRecords: this._params.personStore.all ?? [],
             onSelect: (medication) => {
                 if (medication) {
                     this._editedRecord = {
@@ -256,12 +255,12 @@ export class MedilogRecordDetailDialog extends LitElement {
     }
 
     private _getLastMedicationRecord(): MedilogRecord | undefined {
-        if (!this._editedRecord?.medication_id || !this._params?.allRecords) return undefined;
+        if (!this._editedRecord?.medication_id || !this._params?.personStore) return undefined;
 
         const medicationId = this._editedRecord.medication_id;
         if (!medicationId) return undefined;
 
-        return this._params.allRecords
+        return this._params.personStore.all
             .filter(record => record.medication_id === medicationId)
             .sort((a, b) => b.datetime.diff(a.datetime))[0];
     }
@@ -295,40 +294,41 @@ export class MedilogRecordDetailDialog extends LitElement {
         this._editedRecord = { ...this._editedRecord, id: undefined, datetime: dayjs() };
     }
     private async saveClick() {
-        if (!this.hass || !this._editedRecord)
+        if (!this._editedRecord || !this._params)
             return;
 
-        await this.hass.callService('medilog', 'add_or_update_record', {
-            id: this._editedRecord.id,
-            datetime: this._editedRecord.datetime.toISOString(),
-            temperature: this._editedRecord.temperature,
-            medication_id: this._editedRecord.medication_id,
-            medication_amount: this._editedRecord.medication_amount,
-            note: this._editedRecord.note?.trim(),
-            person_id: this._params?.personId
-        } as MedilogRecordRaw, {}, true, false);
-        this.closeDialog(true);
+        try {
+            if (this._editedRecord.id) {
+                // Update existing record
+                await this._params.personStore.updateRecord(this._editedRecord);
+            } else {
+                // Add new record
+                await this._params.personStore.addRecord(this._editedRecord);
+            }
+            this.closeDialog();
+        } catch (error) {
+            console.error("Error saving record:", error);
+        }
     }
 
     private async deleteClick() {
-        if (!this.hass || !this._editedRecord)
+        if (!this._editedRecord || !this._params || !this._editedRecord.id)
             return;
 
         const localize = getLocalizeFunction(this.hass!);
         if (!confirm(localize('dialog.delete_confirm'))) {
             return;
         }
-        await this.hass.callService('medilog', 'delete_record', {
-            person_id: this._params?.personId,
-            id: this._editedRecord.id,
-        }, {}, true, false);
-
-
-        this.closeDialog(true);
+        
+        try {
+            await this._params.personStore.deleteRecord(this._editedRecord.id);
+            this.closeDialog();
+        } catch (error) {
+            console.error("Error deleting record:", error);
+        }
     }
 
-    private closeDialog(changed: boolean = false) {
-        this._params?.closed(changed);
+    private closeDialog() {
         this._params = undefined;
         this._editedRecord = undefined;
     }

@@ -3,7 +3,7 @@ import { LitElement, html, css } from 'lit';
 import dayjs from 'dayjs';
 import { customElement, property, query, state } from "lit/decorators.js";
 import { Medication, MedilogRecord } from './models';
-import { Medications } from './medications';
+import { MedicationsStore } from './medications-store';
 
 type ApexCharts = any;
 @customElement("medilog-records-chart")
@@ -13,7 +13,7 @@ class MedilogRecordsChart extends LitElement {
 
     // Public properties
     @property({ attribute: false }) public records: (MedilogRecord | null)[] = [];
-    @property({ attribute: false }) public medications!: Medications;
+    @property({ attribute: false }) public medications!: MedicationsStore;
 
     // Query properties
     @query('#chart') private chartElement?: HTMLElement;

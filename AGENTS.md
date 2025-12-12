@@ -285,3 +285,45 @@ export class MyCard extends LitElement implements LovelaceCard {
 - It ensures consistent code organization across the entire project
 - It makes components easier to understand and maintain
 - It follows the natural lifecycle flow of LitElement components
+
+## Development Principles
+
+### YAGNI (You Aren't Gonna Need It)
+
+**Always follow the YAGNI principle** - do not add functionality until it is actually needed. This applies to:
+
+- **Methods**: Only create methods that are currently being used. Don't add "convenience methods" or "helper methods" for potential future use.
+- **Properties**: Don't add properties that might be useful later.
+- **Parameters**: Don't add optional parameters "just in case."
+- **Classes**: Don't create abstractions for hypothetical future scenarios.
+
+**Why YAGNI matters:**
+- Reduces code complexity and maintenance burden
+- Keeps the codebase focused on actual requirements
+- Prevents premature optimization
+- Makes code reviews faster
+- Easier to understand what code is actually doing
+
+**When to add new functionality:**
+- When there is a concrete, immediate use case
+- When it's being actively called/used in the codebase
+- When it solves a current problem, not a hypothetical one
+
+**Example violations to avoid:**
+```typescript
+// ❌ BAD - Adding methods "for future use"
+class DataStore {
+    getAllRecords() { ... }           // Not used anywhere
+    clearCache() { ... }               // Not used anywhere
+    getRecordCount() { ... }           // Not used anywhere
+    refreshAll() { ... }               // Not used anywhere
+}
+
+// ✅ GOOD - Only methods that are actively used
+class DataStore {
+    getStoreForPerson(person) { ... } // Used in components
+    getCachedStore(entity) { ... }    // Used in components
+}
+```
+
+If you need functionality later, **add it then** - not before.

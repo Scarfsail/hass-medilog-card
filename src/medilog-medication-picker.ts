@@ -7,11 +7,11 @@ import { mdiClose } from '@mdi/js';
 import { sharedStyles, sharedTableStyles } from "./shared-styles";
 import { getLocalizeFunction } from "./localize/localize";
 import { Utils } from "./utils";
-import { Medications } from "./medications";
+import { MedicationsStore } from "./medications-store";
 import { showMedicationDialog } from "./medilog-medications-manager";
 
 export interface MedicationPickerParams {
-    medications: Medications;
+    medications: MedicationsStore;
     personId: string;
     allRecords: MedilogRecord[];
     onSelect: (medication: Medication | null) => void;
@@ -269,8 +269,7 @@ export class MedilogMedicationPicker extends LitElement {
             initialName: medicationName,
             onClose: async (changed) => {
                 if (changed) {
-                    // Refetch medications
-                    await this._params?.medications.fetchMedications();
+                    // Medications are automatically refreshed by the store
                     this._calculateSortedMedications();
                     
                     // Find the newly created medication by name

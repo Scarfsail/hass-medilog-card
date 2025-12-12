@@ -8,8 +8,8 @@ import type { HomeAssistant } from "../hass-frontend/src/types";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { Utils } from "./utils";
 import { getLocalizeFunction } from "./localize/localize";
-import { Medications } from "./medications";
 import { sharedTableStyles } from "./shared-styles";
+import { DataStore } from "./data-store";
 
 @customElement("medilog-records-table")
 export class MedilogRecordsTable extends LitElement {
@@ -82,9 +82,8 @@ export class MedilogRecordsTable extends LitElement {
     // Public properties
     @property({ attribute: false }) public person?: PersonInfo
     @property({ attribute: false }) public hass?: HomeAssistant;
-    @property({ attribute: false }) public allRecords?: MedilogRecord[]
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
-    @property({ attribute: false }) public medications!: Medications;
+    @property({ attribute: false }) public dataStore!: DataStore;
 
     // Render method
     render() {
@@ -144,31 +143,22 @@ export class MedilogRecordsTable extends LitElement {
 
     // Private helper methods
     private getMedicationName(record: MedilogRecord): string {
-        return this.medications.getMedicationName(record.medication_id);
+        return this.dataStore.medications.getMedicationName(record.medication_id);
     }
 
     private showRecordDetailsDialog(record: MedilogRecord) {
+        const personStore = this.dataStore.records.getCachedStore(this.person!.entity);
+        if (!personStore) {
+            console.error("Person store not found for", this.person?.entity);
+            return;
+        }
+        
         showMedilogRecordDetailDialog(this, {
             record: record,
-            personId: this.person?.entity || '',
-            allRecords: this.allRecords,
-            medications: this.medications,
-            closed: this.dialogClosed.bind(this)
+            personStore: personStore,
+            medications: this.dataStore.medications
         });
     }
-
-    private dialogClosed(changed: boolean) {
-        if (changed) {
-            // Fire a custom event to notify parent components that records have been changed
-            this.dispatchEvent(new CustomEvent("records-changed", {
-                bubbles: true,
-                composed: true,
-                detail: { personId: this.person?.entity }
-            }));
-
-        }
-    }
-
 }
 
 export function showMedilogRecordDetailDialog(element: HTMLElement, params: MedilogRecordDetailDialogParams) {
