@@ -95,6 +95,9 @@ export class MedilogRecordsTable extends LitElement {
             return html`<ha-circular-progress active></ha-circular-progress>`;
         }
 
+        if (!this.dataStore) {
+            return "Data store is not defined";
+        }
         const localize = getLocalizeFunction(this.hass!);
         const columnCount = 5; // Number of columns in the table
 

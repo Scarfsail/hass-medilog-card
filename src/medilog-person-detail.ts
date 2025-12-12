@@ -115,7 +115,7 @@ export class MedilogPersonDetail extends LitElement {
                     </ha-expansion-panel>
                 `)}
             ` : html`
-                <medilog-records-medications .records=${this._personStore.all} .hass=${this.hass} .person=${this._person} .medications=${this.dataStore.medications}></medilog-records-medications>
+                <medilog-records-medications .records=${this._personStore.all} .hass=${this.hass} .person=${this._person} .dataStore=${this.dataStore}></medilog-records-medications>
             `}
         `
     }

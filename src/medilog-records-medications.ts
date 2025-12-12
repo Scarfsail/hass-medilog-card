@@ -5,7 +5,7 @@ import { Medication, MedilogRecord, PersonInfo } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { getLocalizeFunction } from "./localize/localize";
 import "./medilog-records-table";
-import { MedicationsStore } from "./medications-store";
+import { DataStore } from "./data-store";
 
 type DrillDownLevel = 'year' | 'month' | 'day' | 'hour';
 
@@ -203,7 +203,7 @@ export class MedilogRecordsMedications extends LitElement {
     @property({ attribute: false }) public person?: PersonInfo
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
-    @property({ attribute: false }) public medications!: MedicationsStore;
+    @property({ attribute: false }) public dataStore!: DataStore;
 
     // State properties
     @state() private drillDownState: DrillDownState = { level: 'year' };
@@ -301,6 +301,7 @@ export class MedilogRecordsMedications extends LitElement {
                             .records=${this.getFilteredRecords()} 
                             .hass=${this.hass} 
                             .person=${this.person}
+                            .dataStore=${this.dataStore}
                         ></medilog-records-table>
                     </div>
                 ` : ''}
@@ -400,7 +401,7 @@ export class MedilogRecordsMedications extends LitElement {
         filteredRecords.forEach(record => {
             if (!record.medication_id) return;
 
-            const medicationName = this.medications.getMedicationName(record.medication_id);
+            const medicationName = this.dataStore.medications.getMedicationName(record.medication_id);
             if (!medicationMap.has(medicationName)) {
                 medicationMap.set(medicationName, new Map());
             }
@@ -619,7 +620,7 @@ export class MedilogRecordsMedications extends LitElement {
 
         return filteredRecords.filter(record => {
             // Filter by medication name
-            const medName = this.medications.getMedicationName(record.medication_id);
+            const medName = this.dataStore.medications.getMedicationName(record.medication_id);
             if (medName !== medication) return false;
 
             // Filter by time period based on drill-down level
