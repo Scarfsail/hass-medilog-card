@@ -6,7 +6,7 @@ import { mdiPlus } from '@mdi/js';
 import { sharedStyles, sharedTableStyles } from "./shared-styles";
 import { getLocalizeFunction } from "./localize/localize";
 import "./medilog-medication-dialog";
-import { MedicationsStore } from "./medications-store";
+import { DataStore } from "./data-store";
 
 @customElement("medilog-medications-manager")
 export class MedilogMedicationsManager extends LitElement {
@@ -74,13 +74,28 @@ export class MedilogMedicationsManager extends LitElement {
 
     // Public properties
     @property({ attribute: false }) public hass?: HomeAssistant;
-    @property({ attribute: false }) public medications!: MedicationsStore;
+    @property({ attribute: false }) public dataStore!: DataStore;
 
     // State properties
     @state() private _filterName: string = '';
     @state() private _filterUnits: string = '';
     @state() private _filterAntipyretic: string = '';
     @state() private _filterIngredient: string = '';
+    @state() private _usageCounts: Map<string, number> = new Map();
+
+    // Lifecycle methods
+    async connectedCallback() {
+        super.connectedCallback();
+        await this._calculateUsageCounts();
+    }
+
+    async updated(changedProperties: Map<string, any>) {
+        super.updated(changedProperties);
+        // Recalculate if dataStore changed
+        if (changedProperties.has('dataStore')) {
+            await this._calculateUsageCounts();
+        }
+    }
 
     // Render method
     render() {
@@ -149,6 +164,7 @@ export class MedilogMedicationsManager extends LitElement {
                                         }}
                                     ></ha-textfield>
                                 </th>
+                                <th>${localize('medications_manager.column_usage')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -165,6 +181,7 @@ export class MedilogMedicationsManager extends LitElement {
                                         ` : localize('medications_manager.no')}
                                     </td>
                                     <td>${med.active_ingredient || '-'}</td>
+                                    <td>${this._usageCounts.get(med.id) ?? 0}</td>
                                 </tr>
                             `)}
                         </tbody>
@@ -184,7 +201,7 @@ export class MedilogMedicationsManager extends LitElement {
     private _getFilteredMedications(): Medication[] {
         const localize = getLocalizeFunction(this.hass!);
         
-        return this.medications?.all
+        return this.dataStore?.medications?.all
             .filter(med => {
                 const matchesName = !this._filterName.trim() || 
                     med.name.toLowerCase().includes(this._filterName.toLowerCase());
@@ -209,7 +226,7 @@ export class MedilogMedicationsManager extends LitElement {
 
     private _handleAdd() {
         showMedicationDialog(this, {
-            medications: this.medications,
+            medications: this.dataStore.medications,
             onClose: (changed: boolean) => {
 
             }
@@ -219,11 +236,42 @@ export class MedilogMedicationsManager extends LitElement {
     private _handleEdit(medication: Medication) {
         showMedicationDialog(this, {
             medication: medication,
-            medications: this.medications,
+            medications: this.dataStore.medications,
             onClose: (changed: boolean) => {
                 
             }
         });
+    }
+
+    private async _calculateUsageCounts(): Promise<void> {
+        if (!this.dataStore?.records || !this.dataStore?.medications?.all) {
+            return;
+        }
+
+        const counts = new Map<string, number>();
+        
+        // Initialize counts for all medications
+        for (const med of this.dataStore.medications.all) {
+            counts.set(med.id, 0);
+        }
+
+        // Iterate through all persons and load their stores
+        for (const person of this.dataStore.persons.all) {
+            try {
+                const personStore = await this.dataStore.records.getStoreForPerson(person);
+                // Count records for each medication
+                for (const record of personStore.all) {
+                    if (record.medication_id) {
+                        const currentCount = counts.get(record.medication_id) || 0;
+                        counts.set(record.medication_id, currentCount + 1);
+                    }
+                }
+            } catch (error) {
+                console.error(`Error loading records for person ${person.entity}:`, error);
+            }
+        }
+
+        this._usageCounts = counts;
     }
 }
 

@@ -55,6 +55,7 @@
     "column_units": "Jednotky",
     "column_antipyretic": "Antipyretikum",
     "column_ingredient": "Účinná látka",
+    "column_usage": "Použití",
     "column_actions": "Akce",
     "yes": "Ano",
     "no": "Ne"

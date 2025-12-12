@@ -207,7 +207,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                     ${this.activeTab === 'person' && this.person 
                         ? html`<medilog-person-detail .person=${this.person} .dataStore=${this.dataStore!} .hass=${this._hass}></medilog-person-detail>` 
                         : this.activeTab === 'medications'
-                        ? html`<medilog-medications-manager .medications=${this.dataStore!.medications} .hass=${this._hass}></medilog-medications-manager>`
+                        ? html`<medilog-medications-manager .hass=${this._hass} .dataStore=${this.dataStore}></medilog-medications-manager>`
                         : 'No person selected'}
                 </div>
             </ha-card>
