@@ -8,6 +8,9 @@
     "table": "Tabulka",
     "chart": "Graf"
   },
+  "chart": {
+    "show_medications": "Zobrazit léky"
+  },
   "dialog": {
     "edit_record": "Upravit",
     "new_record": "Nový záznam",

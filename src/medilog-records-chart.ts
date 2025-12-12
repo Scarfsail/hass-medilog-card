@@ -4,23 +4,54 @@ import dayjs from 'dayjs';
 import { customElement, property, query, state } from "lit/decorators.js";
 import { Medication, MedilogRecord } from './models';
 import { MedicationsStore } from './medications-store';
+import { getLocalizeFunction } from './localize/localize';
+import type { HomeAssistant } from '../hass-frontend/src/types';
 
 type ApexCharts = any;
 @customElement("medilog-records-chart")
 class MedilogRecordsChart extends LitElement {
+    // Static styles
+    static styles = css`
+        :host {
+            display: block;
+            position: relative;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 8px;
+            gap: 8px;
+        }
+        .checkbox-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .checkbox-field label {
+            font-size: 14px;
+            color: var(--primary-text-color);
+            cursor: pointer;
+        }
+    `;
+
     // Private properties
     private chart?: ApexCharts;
 
     // Public properties
+    @property({ attribute: false }) public hass!: HomeAssistant;
     @property({ attribute: false }) public records: (MedilogRecord | null)[] = [];
     @property({ attribute: false }) public medications!: MedicationsStore;
+
+    // State properties
+    @state() private _showMedications = true;
 
     // Query properties
     @query('#chart') private chartElement?: HTMLElement;
 
     // Lifecycle methods
     updated(changedProperties: Map<string, any>) {
-        if (changedProperties.has('records')) {
+        if (changedProperties.has('records') || changedProperties.has('_showMedications')) {
             this.createChart();
         }
     }
@@ -32,7 +63,20 @@ class MedilogRecordsChart extends LitElement {
 
     // Render method
     render() {
-        return html`<div id="chart"></div>`;
+        const localize = getLocalizeFunction(this.hass);
+        return html`
+            <div id="chart"></div>
+            <div class="chart-header">
+                <div class="checkbox-field">
+                    <ha-checkbox
+                        .checked=${this._showMedications}
+                        @change=${this._toggleMedications}
+                    ></ha-checkbox>
+                    <label>${localize('chart.show_medications')}</label>
+                </div>
+            </div>
+
+        `;
     }
 
     // Private helper methods
@@ -49,7 +93,7 @@ class MedilogRecordsChart extends LitElement {
             }));
 
         // Create annotations for medication events (only antipyretic medications)
-        const medicationAnnotations = records
+        const medicationAnnotations = this._showMedications ? records
             .filter(record => {
                 if (!record.medication_id) return false;
                 const medication = this.medications.getMedication(record.medication_id);
@@ -65,7 +109,7 @@ class MedilogRecordsChart extends LitElement {
                         background: '#FF4560'
                     }
                 }
-            }));
+            })) : [];
 
         // Configure the chart options
         const options = {
@@ -130,5 +174,9 @@ class MedilogRecordsChart extends LitElement {
         }
         this.chart = new ApexChartsLib(this.chartElement, options);
         this.chart.render();
+    }
+
+    private _toggleMedications() {
+        this._showMedications = !this._showMedications;
     }
 }
