@@ -12,6 +12,7 @@ export class MedicationsStore {
     private _medicationsMap: Map<string, Medication> = new Map();
     private _hass: HomeAssistant;
     private _onMedicationsChanged: () => void;
+    private _lastRefreshTime?: Date;
 
     constructor(hass: HomeAssistant, onMedicationsChanged: () => void) {
         this._medications = [];
@@ -31,6 +32,7 @@ export class MedicationsStore {
             if (response && response.response.medications) {
                 // Update the medications - this preserves the reference
                 this._update(response.response.medications as Medication[]);
+                this._lastRefreshTime = new Date();
                 // Trigger re-render
                 this._onMedicationsChanged();
             }
@@ -99,6 +101,13 @@ export class MedicationsStore {
      */
     get all(): Medication[] {
         return this._medications;
+    }
+
+    /**
+     * Get the last time medications were refreshed from the backend
+     */
+    get lastRefreshTime(): Date | undefined {
+        return this._lastRefreshTime;
     }
 
     /**

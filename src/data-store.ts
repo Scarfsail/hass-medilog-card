@@ -41,4 +41,17 @@ export class DataStore {
         // Records are not loaded here - they're lazy loaded per person
     }
 
+    /**
+     * Get medications and automatically refresh if data is stale (>5 minutes old)
+     */
+    async getMedications(): Promise<void> {
+        const lastRefresh = this.medications.lastRefreshTime;
+        if (lastRefresh) {
+            const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+            if (lastRefresh.getTime() < fiveMinutesAgo) {
+                await this.medications.fetch();
+            }
+        }
+    }
+
 }

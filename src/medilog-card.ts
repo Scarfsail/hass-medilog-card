@@ -12,6 +12,7 @@ import "./medilog-medications-manager"
 import { sharedStyles } from "./shared-styles";
 import { getLocalizeFunction } from "./localize/localize";
 import { DataStore } from "./data-store";
+import { Utils } from "./utils";
 dayjs.extend(duration);
 
 interface MedilogCardConfig extends LovelaceCardConfig {
@@ -60,7 +61,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         box-shadow: var(--ha-card-box-shadow);
         transition: all 0.3s ease;
         font-weight: 500;
-        padding: 20px 25px;
+        padding: 5px 5px;
         font-size: 14px;
         cursor: pointer;
         user-select: none;
@@ -116,12 +117,14 @@ export class MedilogCard extends LitElement implements LovelaceCard {
 
     // Private config
     private config?: MedilogCardConfig;
+    private _updateInterval?: number;
 
     // State properties
     @state() private _hass?: HomeAssistant;
     @state() private dataStore?: DataStore;
     @state() private activeTab: 'person' | 'medications' = 'person';
     @state() person?: PersonInfo;
+    @state() private _refreshTrigger = 0;
 
     // Constructor
     constructor() {
@@ -156,10 +159,18 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                 }
             });
         }
+
+        // Update elapsed times every minute
+        this._updateInterval = window.setInterval(() => {
+            this._refreshTrigger++;
+        }, 60000);
     }
 
     disconnectedCallback() {
         super.disconnectedCallback();
+        if (this._updateInterval) {
+            clearInterval(this._updateInterval);
+        }
     }
 
     // Render method
@@ -185,6 +196,10 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                 <div class="tabs-container">
                     ${personItems.map((person, index) => {
                         const isActive = this.activeTab === 'person' && this.person?.entity === person.value;
+                        const personStore = this.dataStore!.records.getCachedStore(person.value);
+                        const lastRefresh = personStore?.lastRefreshTime;
+                        const elapsedTime = lastRefresh ? Utils.formatDurationFromTo(lastRefresh) : '';
+                        
                         return html`
                         <div 
                             class="tab ${isActive ? 'active-tab' : ''}"
@@ -193,15 +208,38 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                                 this.activeTab = 'person';
                                 this.person = this.dataStore!.persons.getPerson(person.value);
                             }}
-                        >${person.label}</div>`
+                            @dblclick=${async () => {
+                                const personInfo = this.dataStore!.persons.getPerson(person.value);
+                                if (personInfo) {
+                                    const store = await this.dataStore!.records.getStoreForPerson(personInfo);
+                                    await store.fetch();
+                                }
+                            }}
+                        >
+                            <div>${person.label}</div>
+                            ${elapsedTime ? html`<div style="font-size: 0.8em; font-weight: normal; opacity: 0.5; margin-top: 4px;">${elapsedTime}</div>` : ''}
+                        </div>`
                     })}
                     <div 
                         class="tab ${this.activeTab === 'medications' ? 'active-tab' : ''}"
                         style="z-index: ${this.activeTab === 'medications' ? personItems.length + 1 : personItems.length};"
-                        @click=${() => {
+                        @click=${async () => {
                             this.activeTab = 'medications';
+                            await this.dataStore!.getMedications();
                         }}
-                    ><ha-icon icon="mdi:pill-multiple"></ha-icon> </div>
+                        @dblclick=${async () => {
+                            await this.dataStore!.medications.fetch();
+                            await this.dataStore!.records.refreshAllCachedStores();
+                            this.requestUpdate();
+                        }}
+                    >
+                        <ha-icon icon="mdi:pill-multiple"></ha-icon>
+                        ${(() => {
+                            const lastRefresh = this.dataStore!.medications.lastRefreshTime;
+                            const elapsedTime = lastRefresh ? Utils.formatDurationFromTo(lastRefresh) : '';
+                            return elapsedTime ? html`<div style="font-size: 0.8em; font-weight: normal; opacity: 0.5; margin-top: 4px;">${elapsedTime}</div>` : '';
+                        })()}
+                    </div>
                 </div>
                 <div class="tab-content">
                     ${this.activeTab === 'person' && this.person 

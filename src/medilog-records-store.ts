@@ -24,6 +24,7 @@ export class MedilogRecords extends EventTarget {
     /**
      * Get the person records store for a specific person.
      * Lazy loads if not already cached, otherwise returns cached store.
+     * Automatically re-fetches data if last refresh was more than 5 minutes ago.
      * Always returns a store (either freshly created or existing).
      */
     async getStoreForPerson(person: PersonInfo): Promise<MedilogPersonRecordsStore> {
@@ -39,6 +40,15 @@ export class MedilogRecords extends EventTarget {
             store = new MedilogPersonRecordsStore(person.entity, this._hass, onChanged);
             await store.fetch();
             this._storesByPerson.set(person.entity, store);
+        } else {
+            // Check if data is stale (more than 5 minutes old)
+            const lastRefresh = store.lastRefreshTime;
+            if (lastRefresh) {
+                const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+                if (lastRefresh.getTime() < fiveMinutesAgo) {
+                    await store.fetch();
+                }
+            }
         }
                 
         return store;
@@ -50,5 +60,13 @@ export class MedilogRecords extends EventTarget {
      */
     getCachedStore(personEntity: string): MedilogPersonRecordsStore | undefined {
         return this._storesByPerson.get(personEntity);
+    }
+
+    /**
+     * Refresh all cached person stores
+     */
+    async refreshAllCachedStores(): Promise<void> {
+        const refreshPromises = Array.from(this._storesByPerson.values()).map(store => store.fetch());
+        await Promise.all(refreshPromises);
     }
 }

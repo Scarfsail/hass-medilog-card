@@ -14,6 +14,7 @@ export class MedilogPersonRecordsStore {
     private _personEntity: string;
     private _hass: HomeAssistant;
     private _onRecordsChanged: () => void;
+    private _lastRefreshTime?: Date;
 
     constructor(personEntity: string, hass: HomeAssistant, onRecordsChanged: () => void) {
         this._personEntity = personEntity;
@@ -43,6 +44,13 @@ export class MedilogPersonRecordsStore {
     }
 
     /**
+     * Get the last time records were refreshed from the backend
+     */
+    get lastRefreshTime(): Date | undefined {
+        return this._lastRefreshTime;
+    }
+
+    /**
      * Fetch records from the backend and update the store
      */
     async fetch(): Promise<void> {
@@ -60,6 +68,7 @@ export class MedilogPersonRecordsStore {
                     .sort((a, b) => b.datetime.diff(a.datetime));
 
                 this._updateRecords(records);
+                this._lastRefreshTime = new Date();
             }
         } catch (error) {
             console.error(`Error fetching records for person ${this._personEntity}:`, error);
