@@ -61,7 +61,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         box-shadow: var(--ha-card-box-shadow);
         transition: all 0.3s ease;
         font-weight: 500;
-        padding: 5px 5px;
+        padding: 3px 10px;
         font-size: 14px;
         cursor: pointer;
         user-select: none;
