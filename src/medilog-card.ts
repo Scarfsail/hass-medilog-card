@@ -98,6 +98,13 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         display: none;
     }
     
+    .tab-elapsed-time {
+        font-size: 0.8em;
+        font-weight: normal;
+        opacity: 0.5;
+        margin-top: 4px;
+    }
+    
     .tab-content {
         border: 2px solid rgba(var(--rgb-primary-color), 0.3);
         border-radius: 0 8px 8px 8px;
@@ -217,7 +224,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                             }}
                         >
                             <div>${person.label}</div>
-                            ${elapsedTime ? html`<div style="font-size: 0.8em; font-weight: normal; opacity: 0.5; margin-top: 4px;">${elapsedTime}</div>` : ''}
+                            ${isActive && elapsedTime ? html`<div class="tab-elapsed-time">${elapsedTime}</div>` : ''}
                         </div>`
                     })}
                     <div 
@@ -235,9 +242,10 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                     >
                         <ha-icon icon="mdi:pill-multiple"></ha-icon>
                         ${(() => {
+                            const isMedicationsActive = this.activeTab === 'medications';
                             const lastRefresh = this.dataStore!.medications.lastRefreshTime;
                             const elapsedTime = lastRefresh ? Utils.formatDurationFromTo(lastRefresh) : '';
-                            return elapsedTime ? html`<div style="font-size: 0.8em; font-weight: normal; opacity: 0.5; margin-top: 4px;">${elapsedTime}</div>` : '';
+                            return isMedicationsActive && elapsedTime ? html`<div class="tab-elapsed-time">${elapsedTime}</div>` : '';
                         })()}
                     </div>
                 </div>
