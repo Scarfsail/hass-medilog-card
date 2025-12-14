@@ -27,7 +27,7 @@ export class MedilogRecords extends EventTarget {
      * Automatically re-fetches data if last refresh was more than 5 minutes ago.
      * Always returns a store (either freshly created or existing).
      */
-    async getStoreForPerson(person: PersonInfo): Promise<MedilogPersonRecordsStore> {
+    async getStoreForPerson(person: PersonInfo, forceRefresh: boolean = false): Promise<MedilogPersonRecordsStore> {
         // If store exists, check if it has data
         let store = this._storesByPerson.get(person.entity);
         
@@ -41,13 +41,17 @@ export class MedilogRecords extends EventTarget {
             await store.fetch();
             this._storesByPerson.set(person.entity, store);
         } else {
+            let doRefresh = forceRefresh;
             // Check if data is stale (more than 5 minutes old)
             const lastRefresh = store.lastRefreshTime;
             if (lastRefresh) {
-                const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-                if (lastRefresh.getTime() < fiveMinutesAgo) {
-                    await store.fetch();
+                const oneMinuteAgo = Date.now() - (1 * 60 * 1000);
+                if (lastRefresh.getTime() < oneMinuteAgo) {
+                    doRefresh = true;
                 }
+            }
+            if (doRefresh) {
+                await store.fetch();
             }
         }
                 

@@ -47,11 +47,10 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     }
     
     .tab {
-        padding: 1px 2px;
-        min-height: 45px;
+        padding: 8px 16px;
+        min-height: 40px;
         cursor: pointer;
         user-select: none;
-        flex: 1;
         text-align: center;
         display: flex;
         flex-direction: column;
@@ -65,6 +64,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         font-weight: 500;
         transition: all 0.2s ease;
         margin-bottom: -2px;
+        margin-top: 5px;
         border-radius: 8px 8px 0 0;
     }
     
@@ -74,15 +74,9 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     }
     
     .tab.active-tab {
-        background: rgba(var(--rgb-primary-color), 0.8);
+        background: rgba(var(--rgb-primary-color), 0.7);
         color: var(--primary-text-color);
         border-bottom-color: var(--primary-color);
-    }
-    
-    .tab-elapsed-time {
-        font-size: 10px;
-        font-weight: normal;
-        opacity: 0.5;
     }
     
     .tab-content {
@@ -150,11 +144,11 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     }
 
     // Render method
-    render() {        if (!this.config) {
+    render() {       
+         if (!this.config) {
             return "Config is not defined";
         }
 
-        const localize = getLocalizeFunction(this._hass!);
 
         if (!this.dataStore) {
             return html`<ha-card><ha-circular-progress active></ha-circular-progress></ha-card>`;
@@ -172,9 +166,6 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                 <div class="tabs-container">
                     ${personItems.map((person) => {
                         const isActive = this.activeTab === 'person' && this.person?.entity === person.value;
-                        const personStore = this.dataStore!.records.getCachedStore(person.value);
-                        const lastRefresh = personStore?.lastRefreshTime;
-                        const elapsedTime = lastRefresh ? Utils.formatDurationFromTo(lastRefresh) : '';
                         
                         return html`
                         <div 
@@ -192,7 +183,6 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                             }}
                         >
                             <div>${person.label}</div>
-                            ${isActive && elapsedTime ? html`<div class="tab-elapsed-time">${elapsedTime}</div>` : ''}
                         </div>`
                     })}
                     <div 
@@ -208,12 +198,6 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                         }}
                     >
                         <div><ha-icon icon="mdi:pill-multiple"></ha-icon></div>
-                        ${(() => {
-                            const isMedicationsActive = this.activeTab === 'medications';
-                            const lastRefresh = this.dataStore!.medications.lastRefreshTime;
-                            const elapsedTime = lastRefresh ? Utils.formatDurationFromTo(lastRefresh) : '';
-                            return isMedicationsActive && elapsedTime ? html`<div class="tab-elapsed-time">${elapsedTime}</div>` : '';
-                        })()}
                     </div>
                 </div>
                 <div class="tab-content">

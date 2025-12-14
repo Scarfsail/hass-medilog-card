@@ -47,8 +47,8 @@ export class DataStore {
     async getMedications(): Promise<void> {
         const lastRefresh = this.medications.lastRefreshTime;
         if (lastRefresh) {
-            const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-            if (lastRefresh.getTime() < fiveMinutesAgo) {
+            const oneMinuteAgo = Date.now() - (1 * 60 * 1000);
+            if (lastRefresh.getTime() < oneMinuteAgo) {
                 await this.medications.fetch();
             }
         }

@@ -131,7 +131,7 @@ export class MedilogPersonDetail extends LitElement {
             }
 
             // Get the store for this person (lazy loads if needed)
-            this._personStore = await this.dataStore.records.getStoreForPerson(this._person);
+            this._personStore = await this.dataStore.records.getStoreForPerson(this._person, true);
             this.requestUpdate();
 
         } catch (error) {
