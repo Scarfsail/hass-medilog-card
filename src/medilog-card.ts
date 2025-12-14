@@ -48,7 +48,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     
     .tab {
         padding: 1px 2px;
-        min-height: 36px;
+        min-height: 45px;
         cursor: pointer;
         user-select: none;
         flex: 1;
