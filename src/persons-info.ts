@@ -29,6 +29,7 @@ export class PersonsInfo {
                 const persons = (response.response.persons as PersonInfoRaw[]).map((person) => ({
                     entity: person.entity,
                     name: this._hass?.states[person.entity]?.attributes?.friendly_name ?? person.entity,
+                    entity_picture: this._hass?.states[person.entity]?.attributes?.entity_picture,
                     recent_record: Utils.convertMedilogRecordRawToMedilogRecord(person.recent_record)
                 } as PersonInfo)).sort((a, b) => a.name.localeCompare(b.name));
                 

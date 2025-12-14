@@ -47,7 +47,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     }
     
     .tab {
-        padding: 8px 16px;
+        padding: 4px 16px;
         min-height: 40px;
         cursor: pointer;
         user-select: none;
@@ -81,6 +81,25 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     
     .tab-content {
         padding: 0 0 10px 0;
+    }
+    
+    .tab-person {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .person-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--divider-color);
+    }
+    
+    .tab.active-tab .person-avatar {
+        border-color: var(--primary-text-color);
     }
     
     `]
@@ -166,6 +185,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                 <div class="tabs-container">
                     ${personItems.map((person) => {
                         const isActive = this.activeTab === 'person' && this.person?.entity === person.value;
+                        const personInfo = this.dataStore!.persons.getPerson(person.value);
                         
                         return html`
                         <div 
@@ -182,7 +202,12 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                                 }
                             }}
                         >
-                            <div>${person.label}</div>
+                            <div class="tab-person">
+                                ${personInfo?.entity_picture 
+                                    ? html`<img class="person-avatar" src="${personInfo.entity_picture}" alt="${person.label}" />` 
+                                    : ''}
+                                <div>${person.label}</div>
+                            </div>
                         </div>`
                     })}
                     <div 

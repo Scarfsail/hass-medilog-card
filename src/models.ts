@@ -9,6 +9,7 @@ export interface PersonInfoRaw {
 export interface PersonInfo {
     entity: string;
     name: string;
+    entity_picture?: string;
     recent_record: MedilogRecord | null;
 }
 
