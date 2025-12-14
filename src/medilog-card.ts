@@ -40,84 +40,53 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     
     .tabs-container {
         display: flex;
-        margin-bottom: 0;
-        padding: 8px 0 0;
-        position: relative;
-        background: var(--secondary-background-color);
-        border-radius: 8px 8px 0 0;
-        margin: 0 -16px;
-        padding: 8px 16px 0;
+        gap: 4px;
+        border-bottom: 2px solid var(--divider-color);
+        margin: 0 -16px 16px;
+        padding: 0 16px;
     }
     
     .tab {
-        margin: 0 -15px;
-        border-radius: 12px 12px 0 0;
-        border: 2px solid var(--divider-color);
-        border-bottom: none;
-        background: var(--card-background-color);
-        color: var(--secondary-text-color);
-        position: relative;
-        transform: translateY(4px);
-        box-shadow: var(--ha-card-box-shadow);
-        transition: all 0.3s ease;
-        font-weight: 500;
-        padding: 3px 10px;
-        font-size: 14px;
+        padding: 1px 2px;
+        min-height: 36px;
         cursor: pointer;
         user-select: none;
-        flex-grow: 1;
+        flex: 1;
         text-align: center;
-    }
-    
-    .tab:first-child {
-        margin-left: 0;
-    }
-    
-    .tab:last-child {
-        margin-right: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0px;
+        background: transparent;
+        border: 1px solid rgba(var(--rgb-disabled-color), 0.3);
+        color: var(--secondary-text-color);
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        margin-bottom: -2px;
+        border-radius: 8px 8px 0 0;
     }
     
     .tab:hover {
         background: var(--secondary-background-color);
-        transform: translateY(2px);
+        color: var(--primary-text-color);
     }
     
     .tab.active-tab {
-        background: rgb(var(--rgb-primary-color));
-        border-color: rgba(var(--rgb-primary-color), 0.3);
-        border-bottom: 1px solid rgba(var(--rgb-primary-color), 0.3);
-        --mdc-theme-primary: var(--primary-text-color);
-        color: white !important;
-        font-weight: bold;
-        transform: translateY(0px);
-        z-index: 10;
-        font-size: 15px;
-    }
-    
-    .tab.active-tab:before {
-        display: none;
+        background: rgba(var(--rgb-primary-color), 0.8);
+        color: var(--primary-text-color);
+        border-bottom-color: var(--primary-color);
     }
     
     .tab-elapsed-time {
-        font-size: 0.8em;
+        font-size: 10px;
         font-weight: normal;
         opacity: 0.5;
-        margin-top: 4px;
     }
     
     .tab-content {
-        border: 2px solid rgba(var(--rgb-primary-color), 0.3);
-        border-radius: 0 8px 8px 8px;
-        background: var(--card-background-color);
-        margin-top: -1px;
-        padding: 24px;
-        box-shadow: var(--ha-card-box-shadow);
-        position: relative;
-        box-sizing: border-box;
-        margin-left: 0;
-        margin-right: -8px;
-        min-width: 100%;
-        width: fit-content;
+        padding: 0 0 10px 0;
     }
     
     `]
@@ -201,7 +170,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
         return html`
             <ha-card>
                 <div class="tabs-container">
-                    ${personItems.map((person, index) => {
+                    ${personItems.map((person) => {
                         const isActive = this.activeTab === 'person' && this.person?.entity === person.value;
                         const personStore = this.dataStore!.records.getCachedStore(person.value);
                         const lastRefresh = personStore?.lastRefreshTime;
@@ -210,7 +179,6 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                         return html`
                         <div 
                             class="tab ${isActive ? 'active-tab' : ''}"
-                            style="z-index: ${isActive ? personItems.length + 1 : index};"
                             @click=${() => {
                                 this.activeTab = 'person';
                                 this.person = this.dataStore!.persons.getPerson(person.value);
@@ -229,7 +197,6 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                     })}
                     <div 
                         class="tab ${this.activeTab === 'medications' ? 'active-tab' : ''}"
-                        style="z-index: ${this.activeTab === 'medications' ? personItems.length + 1 : personItems.length};"
                         @click=${async () => {
                             this.activeTab = 'medications';
                             await this.dataStore!.getMedications();
@@ -240,7 +207,7 @@ export class MedilogCard extends LitElement implements LovelaceCard {
                             this.requestUpdate();
                         }}
                     >
-                        <ha-icon icon="mdi:pill-multiple"></ha-icon>
+                        <div><ha-icon icon="mdi:pill-multiple"></ha-icon></div>
                         ${(() => {
                             const isMedicationsActive = this.activeTab === 'medications';
                             const lastRefresh = this.dataStore!.medications.lastRefreshTime;
