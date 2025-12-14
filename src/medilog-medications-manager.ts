@@ -30,21 +30,7 @@ export class MedilogMedicationsManager extends LitElement {
             flex: 1;
         }
 
-        .add-button {
-            --mdc-theme-primary: var(--success-color);
-            width: auto;
-            height: 48px;
-            font-weight: bold;
-            border-radius: 12px;
-            padding: 0 24px;
-            --mdc-button-raised-box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-            --mdc-button-raised-hover-box-shadow: 0 5px 12px rgba(0,0,0,0.25);
-        }
 
-        .add-button ha-icon {
-            margin-right: 8px;
-            --mdc-icon-size: 20px;
-        }
     `]
 
     // Public properties
@@ -84,9 +70,8 @@ export class MedilogMedicationsManager extends LitElement {
                             <ha-icon icon="mdi:chart-box"></ha-icon>
                         </ha-button>
                     </div>
-                    <ha-button @click=${this._handleAdd} class="add-button">
+                    <ha-button @click=${this._handleAdd} appearance='plain'>
                         <ha-icon icon="mdi:plus"></ha-icon>
-                        ${localize('medications_manager.add_medication')}
                     </ha-button>
                 </div>
 

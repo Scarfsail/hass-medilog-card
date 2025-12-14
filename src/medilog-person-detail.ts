@@ -39,21 +39,6 @@ export class MedilogPersonDetail extends LitElement {
             margin: 4px;
             margin-bottom: 8px;
         }
-        .add-button {
-            --mdc-theme-primary: var(--success-color);
-            width: auto;
-            height: 48px;
-            font-weight: bold;
-            border-radius: 12px;
-            padding: 0 24px;
-            --mdc-button-raised-box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-            --mdc-button-raised-hover-box-shadow: 0 5px 12px rgba(0,0,0,0.25);
-        }
-        
-        .add-button ha-icon {
-            margin-right: 8px;
-            --mdc-icon-size: 20px;
-        }
     `
 
     // Private properties
@@ -103,8 +88,8 @@ export class MedilogPersonDetail extends LitElement {
                         <ha-icon icon="mdi:pill-multiple"></ha-icon>
                     </ha-button>
                 </div>
-                <ha-button @click=${this.addNewRecord} class="add-button">
-                    <ha-icon icon="mdi:plus"></ha-icon> ${localize('actions.add_record')}
+                <ha-button @click=${this.addNewRecord} appearance='plain'>
+                    <ha-icon icon="mdi:plus"></ha-icon> 
                 </ha-button>
             </div>
             
