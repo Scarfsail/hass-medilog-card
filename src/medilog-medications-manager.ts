@@ -13,23 +13,6 @@ import { DataStore } from "./data-store";
 export class MedilogMedicationsManager extends LitElement {
     // Static styles
     static styles = [sharedStyles, css`
-        .container {
-            padding: 16px;
-        }
-
-        .controls {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            align-items: center;
-        }
-
-        .view-toggle {
-            display: flex;
-            gap: 4px;
-            flex: 1;
-        }
-
 
     `]
 
@@ -70,8 +53,9 @@ export class MedilogMedicationsManager extends LitElement {
                             <ha-icon icon="mdi:chart-box"></ha-icon>
                         </ha-button>
                     </div>
-                    <ha-button @click=${this._handleAdd} appearance='plain'>
+                    <ha-button @click=${this._handleAdd} .appearance=${'plain'}>
                         <ha-icon icon="mdi:plus"></ha-icon>
+                        ${localize('actions.add_record')}
                     </ha-button>
                 </div>
 

@@ -9,6 +9,18 @@ export const sharedStyles = css`
          ha-button.button-error{
             --mdc-theme-primary: var(--error-color);
          }  
+        
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 4px;
+        }
 `
 
 export const sharedTableStyles = css`

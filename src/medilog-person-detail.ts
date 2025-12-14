@@ -13,33 +13,19 @@ import { showMedilogRecordDetailDialog } from "./medilog-records-table";
 import { Utils } from "./utils";
 import { DataStore } from "./data-store";
 import { MedilogPersonRecordsStore } from "./medilog-person-records-store";
+import { sharedStyles } from "./shared-styles";
 dayjs.extend(duration);
 
 @customElement("medilog-person-detail")
 export class MedilogPersonDetail extends LitElement {
     // Static styles
-    static styles = css`
-        .controls {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            align-items: center;
-        }
-        
-        .view-toggle {
-            display: flex;
-            gap: 4px;
-            flex: 1;
-        }
-        
-        ha-button {
-            margin-top: 8px;
-        }
+    static styles = [sharedStyles, css`
+
         ha-expansion-panel {
             margin: 4px;
             margin-bottom: 8px;
         }
-    `
+    `]
 
     // Private properties
     private _person?: PersonInfo
@@ -88,8 +74,9 @@ export class MedilogPersonDetail extends LitElement {
                         <ha-icon icon="mdi:pill-multiple"></ha-icon>
                     </ha-button>
                 </div>
-                <ha-button @click=${this.addNewRecord} appearance='plain'>
+                <ha-button @click=${this.addNewRecord} .appearance=${'plain'}>
                     <ha-icon icon="mdi:plus"></ha-icon> 
+                    ${localize('actions.add_record')}
                 </ha-button>
             </div>
             
