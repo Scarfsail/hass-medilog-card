@@ -3,7 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import { MedilogRecord, Medication } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
-import { mdiClose } from '@mdi/js';
+import { mdiClose, mdiPencil } from '@mdi/js';
 import { sharedStyles, sharedTableStyles } from "./shared-styles";
 import { getLocalizeFunction } from "./localize/localize";
 import { Utils } from "./utils";
@@ -91,6 +91,28 @@ export class MedilogMedicationPicker extends LitElement {
             padding: 48px 16px;
             color: var(--secondary-text-color);
         }
+
+        .actions-column {
+            width: 40px;
+            text-align: center;
+            padding: 4px;
+        }
+
+        .edit-icon {
+            --mdc-icon-button-size: 32px;
+            --mdc-icon-size: 18px;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .edit-icon:hover {
+            color: var(--primary-color);
+            opacity: 0.7;
+        }
+
+        tbody tr:hover .edit-icon {
+            color: var(--primary-text-color);
+        }
     `]
 
     // Public properties
@@ -142,6 +164,13 @@ export class MedilogMedicationPicker extends LitElement {
                             </div>
                         ` : html`
                             <table>
+                                <thead>
+                                    <tr>
+                                        <th>${localize('medication_picker.medication_name')}</th>
+                                        <th>${localize('medication_picker.last_taken')}</th>
+                                        <th class="actions-column"></th>
+                                    </tr>
+                                </thead>
                                 <tbody>
                                     ${filteredMedications.map(item => html`
                                         <tr @click=${() => this._handleSelect(item.med)}>
@@ -151,11 +180,19 @@ export class MedilogMedicationPicker extends LitElement {
                                                     ? Utils.formatDurationFromTo(item.lastTaken)
                                                     : localize('medication_picker.never')}
                                             </td>
+                                            <td class="actions-column">
+                                                <ha-icon-button
+                                                    class="edit-icon"
+                                                    .path=${mdiPencil}
+                                                    .label=${localize('common.edit')}
+                                                    @click=${(e: Event) => this._handleEdit(e, item.med)}
+                                                ></ha-icon-button>
+                                            </td>
                                         </tr>
                                     `)}
                                     ${showAddNew ? html`
                                         <tr class="add-new-row" @click=${this._handleAddNew}>
-                                            <td colspan="2">${localize('medication_picker.add_new_medication')}</td>
+                                            <td colspan="3">${localize('medication_picker.add_new_medication')}</td>
                                         </tr>
                                     ` : nothing}
                                 </tbody>
@@ -257,6 +294,31 @@ export class MedilogMedicationPicker extends LitElement {
             this._params.onSelect(medication);
         }
         this._handleClose();
+    }
+
+    private _handleEdit(e: Event, medication: Medication) {
+        e.stopPropagation(); // Prevent row click from selecting the medication
+        
+        if (!this._params) return;
+
+        showMedicationDialog(this, {
+            medications: this._params.medications,
+            medication: medication,
+            onClose: async (changed) => {
+                if (changed) {
+                    // Medications are automatically refreshed by the store
+                    this._calculateSortedMedications();
+                    this.requestUpdate();
+                }
+                // Refocus the filter input
+                requestAnimationFrame(() => {
+                    const filterInput = this.shadowRoot?.querySelector('#filter-input') as any;
+                    if (filterInput) {
+                        filterInput.focus();
+                    }
+                });
+            }
+        });
     }
 
     private _handleAddNew() {
