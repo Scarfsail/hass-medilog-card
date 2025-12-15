@@ -8,13 +8,13 @@ import type { HomeAssistant } from "../hass-frontend/src/types";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { Utils } from "./utils";
 import { getLocalizeFunction } from "./localize/localize";
-import { sharedTableStyles } from "./shared-styles";
+import { sharedStyles, sharedTableStyles } from "./shared-styles";
 import { DataStore } from "./data-store";
 
 @customElement("medilog-records-table")
 export class MedilogRecordsTable extends LitElement {
     // Static styles
-    static styles = [sharedTableStyles, css`
+    static styles = [sharedStyles, sharedTableStyles, css`
         .record-table tbody tr:not(.day-separator) td:first-child {
             border-bottom: none;
         }
@@ -104,27 +104,6 @@ export class MedilogRecordsTable extends LitElement {
         .temp-orange { background-color: #ff9800; }
         .temp-light-red { background-color: #ff5722; }
         .temp-dark-red { background-color: #d32f2f; }
-
-        .medication-content {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .antipyretic-icon {
-            color: var(--primary-color);
-            flex-shrink: 0;
-        }
-
-        .antipyretic-medication {
-            font-weight: 500;
-            color: var(--primary-color);
-        }
-
-        .record-table tbody tr:hover .antipyretic-icon,
-        .record-table tbody tr:hover .antipyretic-medication {
-            color: var(--text-primary-color);
-        }
     `]
 
     // Public properties

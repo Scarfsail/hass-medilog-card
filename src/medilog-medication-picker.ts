@@ -174,7 +174,7 @@ export class MedilogMedicationPicker extends LitElement {
                                 <tbody>
                                     ${filteredMedications.map(item => html`
                                         <tr @click=${() => this._handleSelect(item.med)}>
-                                            <td>${item.med.name}</td>
+                                            <td>${this._renderMedicationName(item.med)}</td>
                                             <td class="last-taken ${!item.lastTaken ? 'never-taken' : ''}">
                                                 ${item.lastTaken 
                                                     ? Utils.formatDurationFromTo(item.lastTaken)
@@ -259,6 +259,18 @@ export class MedilogMedicationPicker extends LitElement {
     private _shouldShowAddNew(): boolean {
         // Always show "Add new" button
         return true;
+    }
+
+    private _renderMedicationName(medication: Medication) {
+        if (medication.is_antipyretic) {
+            return html`
+                <div class="medication-content">
+                    <ha-icon class="antipyretic-icon" icon="mdi:thermometer-chevron-down"></ha-icon>
+                    <span class="antipyretic-medication">${medication.name}</span>
+                </div>
+            `;
+        }
+        return medication.name;
     }
 
     private _handleKeyDown(e: KeyboardEvent) {

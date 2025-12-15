@@ -21,6 +21,23 @@ export const sharedStyles = css`
             display: flex;
             gap: 4px;
         }
+
+        .medication-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .antipyretic-icon {
+            color: var(--primary-color);
+            flex-shrink: 0;
+        }
+
+        .antipyretic-medication {
+            font-weight: 500;
+            color: var(--primary-color);
+        }
 `
 
 export const sharedTableStyles = css`
@@ -49,6 +66,11 @@ export const sharedTableStyles = css`
     
     table tbody tr:hover {
         background-color: var(--primary-color);
+        color: var(--text-primary-color);
+    }
+
+    table tbody tr:hover .antipyretic-icon,
+    table tbody tr:hover .antipyretic-medication {
         color: var(--text-primary-color);
     }
 `
