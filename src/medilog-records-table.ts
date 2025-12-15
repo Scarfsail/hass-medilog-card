@@ -209,7 +209,8 @@ export class MedilogRecordsTable extends LitElement {
         const minTemp = 36.5;
         const maxTemp = 40;
         const clampedTemp = Math.max(minTemp, Math.min(maxTemp, temperature));
-        return ((clampedTemp - minTemp) / (maxTemp - minTemp)) * 100;
+        const width = ((clampedTemp - minTemp) / (maxTemp - minTemp)) * 100;
+        return Math.max(3, width); // Always show at least 3% bar width
     }
 }
 
