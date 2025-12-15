@@ -77,6 +77,33 @@ export class MedilogRecordsTable extends LitElement {
         .record-table tbody tr:first-child .date-header {
             border-top: none;
         }
+
+        .temperature-cell {
+            position: relative;
+            padding: 0 !important;
+        }
+
+        .temperature-content {
+            position: relative;
+            z-index: 1;
+            padding: 12px 16px;
+            font-weight: 500;
+        }
+
+        .temperature-bar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            border-radius: 2px;
+            opacity: 0.3;
+            transition: width 0.3s ease;
+        }
+
+        .temp-green { background-color: #4caf50; }
+        .temp-orange { background-color: #ff9800; }
+        .temp-light-red { background-color: #ff5722; }
+        .temp-dark-red { background-color: #d32f2f; }
     `]
 
     // Public properties
@@ -135,7 +162,15 @@ export class MedilogRecordsTable extends LitElement {
                                 <td>${record.datetime.format('HH:mm')}</td>
                                 <td>${Utils.formatDurationFromTo(record.datetime)}</td>
                                 <td>${this.getMedicationName(record) ? `${this.getMedicationName(record)}${record.medication_amount && record.medication_amount > 1 ? ` (${record.medication_amount})` : ''}` : '-'}</td>
-                                <td>${record.temperature ? `${record.temperature} °C` : '-'}</td>
+                                <td class="temperature-cell">
+                                    ${record.temperature ? html`
+                                        <div class="temperature-bar ${this._getTemperatureColorClass(record.temperature)}" 
+                                             style="width: ${this._getTemperatureBarWidth(record.temperature)}%"></div>
+                                        <div class="temperature-content">
+                                            ${record.temperature} °C
+                                        </div>
+                                    ` : html`<div class="temperature-content">-</div>`}
+                                </td>
                             </tr>
                         `;
                     })}
@@ -161,6 +196,20 @@ export class MedilogRecordsTable extends LitElement {
             personStore: personStore,
             medications: this.dataStore.medications
         });
+    }
+
+    private _getTemperatureColorClass(temperature: number): string {
+        if (temperature < 37) return 'temp-green';
+        if (temperature < 38) return 'temp-orange';
+        if (temperature < 39) return 'temp-light-red';
+        return 'temp-dark-red';
+    }
+
+    private _getTemperatureBarWidth(temperature: number): number {
+        const minTemp = 36.5;
+        const maxTemp = 40;
+        const clampedTemp = Math.max(minTemp, Math.min(maxTemp, temperature));
+        return ((clampedTemp - minTemp) / (maxTemp - minTemp)) * 100;
     }
 }
 
