@@ -77,6 +77,12 @@
     "temperature": "Teplota",
     "medication": "Lék"
   },
+  "relative_date": {
+    "today": "Dnes",
+    "days_ago_one": "Před {count} dnem",
+    "days_ago_few": "Před {count} dny",
+    "days_ago_many": "Před {count} dny"
+  },
   "actions": {
     "add_record": "Přidat"
   },

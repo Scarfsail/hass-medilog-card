@@ -15,67 +15,41 @@ import { DataStore } from "./data-store";
 export class MedilogRecordsTable extends LitElement {
     // Static styles
     static styles = [sharedStyles, sharedTableStyles, css`
-        .record-table tbody tr:not(.day-separator) td:first-child {
-            border-bottom: none;
+        .date-separator {
+            cursor: default;
+            background-color: var(--secondary-background-color);
+        }
+        
+        .date-separator:hover {
+            background-color: var(--secondary-background-color) !important;
+        }
+        
+        .date-separator td {
+            padding: 8px 16px;
+            cursor: default;
+            font-weight: 600;
+            color: var(--primary-text-color);
+            border-bottom: 2px solid var(--divider-color);
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        
+        .record-table tbody tr:first-child.date-separator td {
+            padding-top: 4px;
         }
         
         .day-separator {
-            cursor: default;
-            height: 32px;
+            height: 8px;
         }
         
         .day-separator td {
-            padding: 24px 0;
-            cursor: default;
-            position: relative;
+            padding: 0;
             border-bottom: none;
-        }
-        
-        .day-separator td:first-child {
-            border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
-        }
-        
-        .day-separator td:not(:first-child) {
-            border-bottom: none;
-        }
-        
-        .day-separator td:not(:first-child):before {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--divider-color) 0%, var(--divider-color) 70%, transparent 100%);
-            border-radius: 2px;
-        }
-        
-        .day-separator hr {
-            display: none;
+            background: transparent;
         }
         
         .day-separator:hover {
-            background-color: transparent !important;
-            color: inherit !important;
-        }
-        
-        .date-header {
-            background-color: var(--secondary-background-color);
-            font-weight: bold;
-            text-align: center;
-            padding: 12px 16px;
-            border-top: 2px solid var(--primary-color);
-            border-bottom: 1px solid var(--divider-color);
-            color: var(--primary-text-color);
-        }
-        
-        .date-header:hover {
-            background-color: var(--secondary-background-color) !important;
-            color: var(--primary-text-color) !important;
-        }
-        
-        .record-table tbody tr:first-child .date-header {
-            border-top: none;
+            background: transparent !important;
         }
 
         .temperature-cell {
@@ -126,13 +100,12 @@ export class MedilogRecordsTable extends LitElement {
             return "Data store is not defined";
         }
         const localize = getLocalizeFunction(this.hass!);
-        const columnCount = 5; // Number of columns in the table
+        const columnCount = 4; // Number of columns in the table
 
         return html`
             <table class="record-table"> 
                <thead>
                 <tr>
-                    <th><ha-icon icon="mdi:calendar"></ha-icon></th>
                     <th><ha-icon icon="mdi:clock"></ha-icon></th>
                     <th><ha-icon icon="mdi:timer-sand"></ha-icon></th>
                     <th><ha-icon icon="mdi:pill"></ha-icon></th>
@@ -144,9 +117,7 @@ export class MedilogRecordsTable extends LitElement {
                         if (record === null) {
                             return html`
                                 <tr class="day-separator">
-                                    <td colspan="${columnCount}">
-                                        <hr />
-                                    </td>
+                                    <td colspan="${columnCount}"></td>
                                 </tr>
                             `;
                         }
@@ -156,9 +127,18 @@ export class MedilogRecordsTable extends LitElement {
                             this.records![index - 1] === null || 
                             !record.datetime.isSame(this.records![index - 1]?.datetime, 'day');
                         
+                        // Render date separator row if it's the first record of the day
+                        const dateSeparator = isFirstOfDay ? html`
+                            <tr class="date-separator">
+                                <td colspan="${columnCount}">
+                                    ${this._formatDateSeparator(record.datetime)}
+                                </td>
+                            </tr>
+                        ` : '';
+                        
                         return html`
+                            ${dateSeparator}
                             <tr @click=${() => this.showRecordDetailsDialog(record)}>
-                                <td>${isFirstOfDay ? Utils.formatDate(record.datetime,true, false) : ''}</td>
                                 <td>${record.datetime.format('HH:mm')}</td>
                                 <td>${Utils.formatDurationFromTo(record.datetime)}</td>
                                 <td>${this._renderMedication(record)}</td>
@@ -182,6 +162,25 @@ export class MedilogRecordsTable extends LitElement {
     // Private helper methods
     private getMedicationName(record: MedilogRecord): string {
         return this.dataStore.medications.getMedicationName(record.medication_id);
+    }
+
+    private _formatDateSeparator(datetime: dayjs.Dayjs) {
+        const localize = getLocalizeFunction(this.hass!);
+        const formattedDate = Utils.formatDate(datetime, true, false);
+        const daysAgo = dayjs().startOf('day').diff(datetime.startOf('day'), 'day');
+        
+        let relativeText: string;
+        if (daysAgo === 0) {
+            relativeText = localize('relative_date.today');
+        } else if (daysAgo === 1) {
+            relativeText = localize('relative_date.days_ago_one').replace('{count}', '1');
+        } else if (daysAgo >= 2 && daysAgo <= 4) {
+            relativeText = localize('relative_date.days_ago_few').replace('{count}', daysAgo.toString());
+        } else {
+            relativeText = localize('relative_date.days_ago_many').replace('{count}', daysAgo.toString());
+        }
+        
+        return html`${formattedDate} <ha-icon icon="mdi:calendar" style="--mdc-icon-size: 16px; vertical-align: middle; margin: 0 4px;"></ha-icon> ${relativeText}`;
     }
 
     private _renderMedication(record: MedilogRecord) {
