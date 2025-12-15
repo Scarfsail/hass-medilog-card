@@ -74,10 +74,10 @@ export class MedilogRecordsTable extends LitElement {
             transition: width 0.3s ease;
         }
 
-        .temp-green { background-color: #4caf50; }
-        .temp-orange { background-color: #ff9800; }
-        .temp-light-red { background-color: #ff5722; }
-        .temp-dark-red { background-color: #d32f2f; }
+        .temp-green { background-color: #4caf5060; }
+        .temp-orange { background-color: #ff980060; }
+        .temp-light-red { background-color: #ff572260; }
+        .temp-dark-red { background-color: #d32f2f60; }
     `]
 
     // Public properties
