@@ -104,6 +104,27 @@ export class MedilogRecordsTable extends LitElement {
         .temp-orange { background-color: #ff9800; }
         .temp-light-red { background-color: #ff5722; }
         .temp-dark-red { background-color: #d32f2f; }
+
+        .medication-content {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .antipyretic-icon {
+            color: var(--primary-color);
+            flex-shrink: 0;
+        }
+
+        .antipyretic-medication {
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .record-table tbody tr:hover .antipyretic-icon,
+        .record-table tbody tr:hover .antipyretic-medication {
+            color: var(--text-primary-color);
+        }
     `]
 
     // Public properties
@@ -161,7 +182,7 @@ export class MedilogRecordsTable extends LitElement {
                                 <td>${isFirstOfDay ? Utils.formatDate(record.datetime,true, false) : ''}</td>
                                 <td>${record.datetime.format('HH:mm')}</td>
                                 <td>${Utils.formatDurationFromTo(record.datetime)}</td>
-                                <td>${this.getMedicationName(record) ? `${this.getMedicationName(record)}${record.medication_amount && record.medication_amount > 1 ? ` (${record.medication_amount})` : ''}` : '-'}</td>
+                                <td>${this._renderMedication(record)}</td>
                                 <td class="temperature-cell">
                                     ${record.temperature ? html`
                                         <div class="temperature-bar ${this._getTemperatureColorClass(record.temperature)}" 
@@ -182,6 +203,32 @@ export class MedilogRecordsTable extends LitElement {
     // Private helper methods
     private getMedicationName(record: MedilogRecord): string {
         return this.dataStore.medications.getMedicationName(record.medication_id);
+    }
+
+    private _renderMedication(record: MedilogRecord) {
+        const medicationName = this.getMedicationName(record);
+        if (!medicationName) {
+            return '-';
+        }
+
+        const medication = record.medication_id 
+            ? this.dataStore.medications.getMedication(record.medication_id)
+            : null;
+        const isAntipyretic = medication?.is_antipyretic ?? false;
+        const amount = record.medication_amount && record.medication_amount > 1 
+            ? ` (${record.medication_amount})` 
+            : '';
+
+        if (isAntipyretic) {
+            return html`
+                <div class="medication-content">
+                    <ha-icon class="antipyretic-icon" icon="mdi:thermometer-chevron-down"></ha-icon>
+                    <span class="antipyretic-medication">${medicationName}${amount}</span>
+                </div>
+            `;
+        }
+
+        return `${medicationName}${amount}`;
     }
 
     private showRecordDetailsDialog(record: MedilogRecord) {
