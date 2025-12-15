@@ -31,14 +31,14 @@ export const sharedTableStyles = css`
     
     table th {
         text-align: center;
-        padding: 8px 16px;
+        padding: 8px 8px;
         border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
         color: var(--secondary-text-color);
         font-weight: 500;
     }
     
     table td {
-        padding: 8px 16px;
+        padding: 8px 8px;
         border-bottom: 1px solid var(--divider-color, rgba(0, 0, 0, 0.12));
         text-align: center;
     }
