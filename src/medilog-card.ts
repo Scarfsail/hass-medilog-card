@@ -32,18 +32,25 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     // Static styles
     static styles = [sharedStyles, css`
     ha-card {
-        overflow-x: auto;
+        overflow: hidden;
         background: var(--card-background-color);
         box-shadow: var(--ha-card-box-shadow);
-        padding: 0 16px;
+        padding: 0 0 0 16px;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 64px);
     }
     
     .tabs-container {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: var(--card-background-color);
         display: flex;
         gap: 4px;
         border-bottom: 2px solid var(--divider-color);
-        margin: 0 -16px 16px;
-        padding: 0 16px;
+        margin: 0 -16px 0 -16px;
+        padding: 0 16px 0 16px;
     }
     
     .tab {
@@ -100,6 +107,13 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     
     .tab.active-tab .person-avatar {
         border-color: var(--primary-text-color);
+    }
+    
+    .tab-content {
+        overflow-y: auto;
+        overflow-x: hidden;
+        flex: 1;
+        padding: 16px 16px 10px 0;
     }
     
     `]
