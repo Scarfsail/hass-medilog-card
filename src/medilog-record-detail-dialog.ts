@@ -1,4 +1,4 @@
-import { LitElement, css, html, nothing } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import { MedilogRecord, MedilogRecordRaw, Medication } from "./models";
@@ -6,7 +6,7 @@ import type { HomeAssistant } from "../hass-frontend/src/types";
 import { mdiClose, mdiCloseCircle } from '@mdi/js';
 import { sharedStyles } from "./shared-styles";
 import { loadHaForm, loadHaYamlEditor } from "./load-ha-elements";
-import { getLocalizeFunction } from "./localize/localize";
+import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { Utils } from "./utils";
 import "./medilog-medication-dialog";
 import { MedicationsStore } from "./medications-store";
@@ -77,6 +77,9 @@ export class MedilogRecordDetailDialog extends LitElement {
         }
     `]
 
+    // Private properties
+    private _localize?: (key: string) => string;
+
     // Public properties
     @property({ attribute: false }) public hass!: HomeAssistant;
 
@@ -90,21 +93,26 @@ export class MedilogRecordDetailDialog extends LitElement {
         this._editedRecord = dialogParams.record;
     }
 
+    // Lifecycle methods
+    willUpdate(changedProperties: PropertyValues) {
+        if (!this._localize && this.hass) {
+            this._localize = getLocalizeFunction(this.hass);
+        }
+    }
+
     // Render method
     render() {
-        if (!this._params || !this.hass || !this._editedRecord) {
+        if (!this._params || !this._editedRecord || !this._localize) {
             return nothing;
         }
-
-        const localize = getLocalizeFunction(this.hass!);
 
         return html`
             <ha-dialog open .heading=${true} @closed=${this.closeDialog} @close-dialog=${this.closeDialog}>
                 <ha-dialog-header slot="heading">
                     <ha-icon-button slot="navigationIcon" dialogAction="cancel" .path=${mdiClose}></ha-icon-button>
                     <span slot="title">${this._editedRecord.id
-                ? localize('dialog.edit_record')
-                : localize('dialog.new_record')}</span>
+                ? this._localize('dialog.edit_record')
+                : this._localize('dialog.new_record')}</span>
                 </ha-dialog-header>
                 <div class="wrapper">
                     <div class="datetime-field">
@@ -121,7 +129,7 @@ export class MedilogRecordDetailDialog extends LitElement {
                             <div class="medication-field-wrapper">
                                 <ha-textfield
                                     class="medication-field"
-                                    .label=${localize('dialog.medication')}
+                                    .label=${this._localize('dialog.medication')}
                                     .value=${this._getMedicationName()}
                                     readonly
                                     @focus=${this._openMedicationPicker}
@@ -137,7 +145,7 @@ export class MedilogRecordDetailDialog extends LitElement {
                             </div>
                             <ha-textfield
                                 class="amount-field"
-                                .label=${localize('dialog.medication_amount')}
+                                .label=${this._localize('dialog.medication_amount')}
                                 .value=${this._editedRecord.medication_amount ?? ""}
                                 type="number"
                                 step="0.5"
@@ -151,10 +159,10 @@ export class MedilogRecordDetailDialog extends LitElement {
                         </div>
                         ${this._renderLastTaken()}
                     </div>
-                    <ha-textfield .label=${localize('dialog.notes')} .value=${this._editedRecord.note ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textfield>
+                    <ha-textfield .label=${this._localize('dialog.notes')} .value=${this._editedRecord.note ?? ""} class="fill field" @change=${(e: Event) => { this._editedRecord = { ...this._editedRecord!, note: (e.target as HTMLTextAreaElement).value }; }}></ha-textfield>
                     ${this._editedRecord.temperature !== undefined ? html`
                         <p >
-                            <strong>${localize('dialog.temperature')}:</strong> ${this._editedRecord.temperature}
+                            <strong>${this._localize('dialog.temperature')}:</strong> ${this._editedRecord.temperature}
                             <ha-button .variant=${"danger"} @click=${() => this._editedRecord = { ...this._editedRecord!, temperature: undefined }}>X</ha-button>
                         </p>
                         <div>
@@ -169,7 +177,7 @@ export class MedilogRecordDetailDialog extends LitElement {
                         </div>
                     ` : html`
                         <p class="temperature-value">
-                            <strong>${localize('dialog.temperature')}:</strong>
+                            <strong>${this._localize('dialog.temperature')}:</strong>
                             <ha-button @click=${() => this._editedRecord = { ...this._editedRecord!, temperature: 36.7 }}>+</ha-button>
                         </p>
                     `}
@@ -178,17 +186,17 @@ export class MedilogRecordDetailDialog extends LitElement {
 
                 ${this._editedRecord.id ? html`
                     <ha-button slot="primaryAction" .variant=${"danger"} @click=${this.deleteClick} class="button-error">
-                        ${localize('common.delete')}
+                        ${this._localize('common.delete')}
                     </ha-button>
                 
                 <ha-button slot="primaryAction" @click=${this.duplicateClick}>
-                    ${localize('common.duplicate')}
+                    ${this._localize('common.duplicate')}
                 </ha-button>
 
                 ` : nothing}
 
                 <ha-button slot="primaryAction" .variant=${"success"} @click=${this.saveClick}>
-                    ${localize('common.save')}
+                    ${this._localize('common.save')}
                 </ha-button>
             </ha-dialog>
         `;
@@ -202,7 +210,7 @@ export class MedilogRecordDetailDialog extends LitElement {
         }
 
         const medication = this._params?.medications.getMedication(this._editedRecord.medication_id);
-        return medication?.name ?? getLocalizeFunction(this.hass!)('medication_dialog.medication_not_found');
+        return medication?.name ?? (this._localize?.('medication_dialog.medication_not_found') || '');
     }
 
     private _openMedicationPicker() {
@@ -239,9 +247,8 @@ export class MedilogRecordDetailDialog extends LitElement {
 
     private _renderLastTaken() {
         const lastRecord = this._getLastMedicationRecord();
-        if (!lastRecord || !this._editedRecord) return nothing;
+        if (!lastRecord || !this._editedRecord || !this._localize) return nothing;
 
-        const localize = getLocalizeFunction(this.hass!);
         const duration = Utils.formatDurationFromTo(lastRecord.datetime);
         const amount = lastRecord.medication_amount && lastRecord.medication_amount > 1
             ? ` (${lastRecord.medication_amount}x)`
@@ -249,7 +256,7 @@ export class MedilogRecordDetailDialog extends LitElement {
 
         return html`
             <div class="last-taken-info">
-                ${localize('dialog.last_taken').replace('{duration}', duration)}${amount}
+                ${this._localize('dialog.last_taken').replace('{duration}', duration)}${amount}
             </div>
         `;
     }
@@ -307,11 +314,10 @@ export class MedilogRecordDetailDialog extends LitElement {
     }
 
     private async deleteClick() {
-        if (!this._editedRecord || !this._params || !this._editedRecord.id)
+        if (!this._editedRecord || !this._params || !this._editedRecord.id || !this._localize)
             return;
 
-        const localize = getLocalizeFunction(this.hass!);
-        if (!confirm(localize('dialog.delete_confirm'))) {
+        if (!confirm(this._localize('dialog.delete_confirm'))) {
             return;
         }
         

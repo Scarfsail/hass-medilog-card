@@ -1,4 +1,4 @@
-import { LitElement, css, html } from "lit-element"
+import { LitElement, css, html, PropertyValues } from "lit-element"
 import { customElement, property, state } from "lit/decorators.js";
 import 'dayjs/locale/cs';
 import { Medication, MedilogRecord, PersonInfo } from "./models";
@@ -6,7 +6,7 @@ import type { HomeAssistant } from "../hass-frontend/src/types";
 import "./medilog-records-chart"
 import "./medilog-records-table"
 import "./medilog-records-medications"
-import { getLocalizeFunction } from "./localize/localize";
+import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { DataStore } from "./data-store";
 
 @customElement("medilog-records")
@@ -15,6 +15,9 @@ export class MedilogRecords extends LitElement {
     static styles = css`
     
     `
+
+    // Private properties
+    private _localize?: LocalizeFunction;
 
     // Public properties
     @property({ attribute: false }) public person?: PersonInfo
@@ -25,6 +28,13 @@ export class MedilogRecords extends LitElement {
     // State properties
     @state() private visualization: 'chart' | 'table' = 'table';
 
+    // Lifecycle methods
+    willUpdate(changedProperties: PropertyValues) {
+        if (!this._localize && this.hass) {
+            this._localize = getLocalizeFunction(this.hass);
+        }
+    }
+
     // Render method
     render() {
         if (!this.person) {
@@ -34,7 +44,6 @@ export class MedilogRecords extends LitElement {
         if (!this.records) {
             return html`<ha-circular-progress active></ha-circular-progress>`;
         }
-        const localize = getLocalizeFunction(this.hass!);
 
         return html`
             <div>
@@ -45,8 +54,8 @@ export class MedilogRecords extends LitElement {
             ${this.visualization === 'table'
                 ? html`<medilog-records-table .records=${this.records} .hass=${this.hass} .person=${this.person} .dataStore=${this.dataStore}></medilog-records-table>`
                 : this.visualization === 'chart'
-                ? html`<medilog-records-chart .records=${this.records} .medications=${this.dataStore.medications}></medilog-records-chart>`
-                : html`<div>Unknown visualization: ${this.visualization}</div>`
+                    ? html`<medilog-records-chart .records=${this.records} .medications=${this.dataStore.medications}></medilog-records-chart>`
+                    : html`<div>Unknown visualization: ${this.visualization}</div>`
             }
         `;
     }

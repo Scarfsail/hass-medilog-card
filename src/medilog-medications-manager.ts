@@ -1,9 +1,9 @@
-import { LitElement, css, html, nothing } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
 import { customElement, property, state } from "lit/decorators.js";
 import { Medication } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { sharedStyles } from "./shared-styles";
-import { getLocalizeFunction } from "./localize/localize";
+import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import "./medilog-medication-dialog";
 import "./medilog-medications-table";
 import "./medilog-medications-usage";
@@ -15,6 +15,9 @@ export class MedilogMedicationsManager extends LitElement {
     static styles = [sharedStyles, css`
 
     `]
+
+    // Private properties
+    private _localize?: LocalizeFunction;
 
     // Public properties
     @property({ attribute: false }) public hass?: HomeAssistant;
@@ -33,14 +36,18 @@ export class MedilogMedicationsManager extends LitElement {
         super.disconnectedCallback();
     }
 
+    willUpdate(changedProperties: PropertyValues) {
+        if (!this._localize && changedProperties.has('hass') && this.hass) {
+            this._localize = getLocalizeFunction(this.hass);
+        }
+    }
+
 
     // Render method
     render() {
-        if (!this.hass) {
+        if (!this.hass || !this._localize) {
             return nothing;
         }
-
-        const localize = getLocalizeFunction(this.hass);
 
         return html`
             <div class="container">
@@ -55,7 +62,7 @@ export class MedilogMedicationsManager extends LitElement {
                     </div>
                     <ha-button @click=${this._handleAdd} .appearance=${'plain'}>
                         <ha-icon icon="mdi:plus"></ha-icon>
-                        ${localize('actions.add_record')}
+                        ${this._localize('actions.add_record')}
                     </ha-button>
                 </div>
 

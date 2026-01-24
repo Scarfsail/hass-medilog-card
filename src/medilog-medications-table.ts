@@ -1,9 +1,9 @@
-import { LitElement, css, html, nothing } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
 import { customElement, property, state } from "lit/decorators.js";
 import { Medication } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { sharedStyles, sharedTableStyles } from "./shared-styles";
-import { getLocalizeFunction } from "./localize/localize";
+import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { DataStore } from "./data-store";
 import { showMedicationDialog } from "./medilog-medications-manager";
 
@@ -68,6 +68,9 @@ export class MedilogMedicationsTable extends LitElement {
         }
     `]
 
+    // Private properties
+    private _localize?: LocalizeFunction;
+
     // Public properties
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public dataStore!: DataStore;
@@ -94,20 +97,25 @@ export class MedilogMedicationsTable extends LitElement {
         }
     }
 
+    willUpdate(changedProperties: PropertyValues) {
+        if (!this._localize && this.hass) {
+            this._localize = getLocalizeFunction(this.hass);
+        }
+    }
+
     // Render method
     render() {
-        if (!this.hass) {
+        if (!this._localize) {
             return nothing;
         }
 
-        const localize = getLocalizeFunction(this.hass);
         const filteredMedications = this._getFilteredMedications();
 
         return html`
             ${filteredMedications.length === 0 && !this._filterName && !this._filterUnits && !this._filterAntipyretic && !this._filterIngredient ? html`
                 <div class="empty-state">
                     <ha-icon icon="mdi:pill"></ha-icon>
-                    <p>${localize('medications_manager.empty_state')}</p>
+                    <p>${this._localize('medications_manager.empty_state')}</p>
                 </div>
             ` : html`
                 <table>
@@ -116,7 +124,7 @@ export class MedilogMedicationsTable extends LitElement {
                             <th>
                                 <ha-textfield
                                     class="filter-field"
-                                    .label=${localize('medications_manager.column_name')}
+                                    .label=${this._localize('medications_manager.column_name')}
                                     .value=${this._filterName}
                                     @input=${(e: Event) => {
                                         this._filterName = (e.target as HTMLInputElement).value;
@@ -126,7 +134,7 @@ export class MedilogMedicationsTable extends LitElement {
                             <th>
                                 <ha-textfield
                                     class="filter-field"
-                                    .label=${localize('medications_manager.column_units')}
+                                    .label=${this._localize('medications_manager.column_units')}
                                     .value=${this._filterUnits}
                                     @input=${(e: Event) => {
                                         this._filterUnits = (e.target as HTMLInputElement).value;
@@ -136,7 +144,7 @@ export class MedilogMedicationsTable extends LitElement {
                             <th>
                                 <ha-textfield
                                     class="filter-field"
-                                    .label=${localize('medications_manager.column_antipyretic')}
+                                    .label=${this._localize('medications_manager.column_antipyretic')}
                                     .value=${this._filterAntipyretic}
                                     @input=${(e: Event) => {
                                         this._filterAntipyretic = (e.target as HTMLInputElement).value;
@@ -146,14 +154,14 @@ export class MedilogMedicationsTable extends LitElement {
                             <th>
                                 <ha-textfield
                                     class="filter-field"
-                                    .label=${localize('medications_manager.column_ingredient')}
+                                    .label=${this._localize('medications_manager.column_ingredient')}
                                     .value=${this._filterIngredient}
                                     @input=${(e: Event) => {
                                         this._filterIngredient = (e.target as HTMLInputElement).value;
                                     }}
                                 ></ha-textfield>
                             </th>
-                            <th>${localize('medications_manager.column_usage')}</th>
+                            <th>${this._localize('medications_manager.column_usage')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -165,9 +173,9 @@ export class MedilogMedicationsTable extends LitElement {
                                     ${med.is_antipyretic ? html`
                                         <span class="antipyretic-badge">
                                             <ha-icon icon="mdi:thermometer"></ha-icon>
-                                            ${localize('medications_manager.yes')}
+                                            ${this._localize!('medications_manager.yes')}
                                         </span>
-                                    ` : localize('medications_manager.no')}
+                                    ` : this._localize!('medications_manager.no')}
                                 </td>
                                 <td>${med.active_ingredient || '-'}</td>
                                 <td 
@@ -183,7 +191,7 @@ export class MedilogMedicationsTable extends LitElement {
                 ${filteredMedications.length === 0 ? html`
                     <div class="empty-state">
                         <ha-icon icon="mdi:filter-remove"></ha-icon>
-                        <p>${localize('medications_manager.no_results')}</p>
+                        <p>${this._localize('medications_manager.no_results')}</p>
                     </div>
                 ` : nothing}
             `}
@@ -192,7 +200,7 @@ export class MedilogMedicationsTable extends LitElement {
 
     // Private helper methods
     private _getFilteredMedications(): Medication[] {
-        const localize = getLocalizeFunction(this.hass!);
+        if (!this._localize) return [];
         
         return this.dataStore?.medications?.all
             .filter(med => {
@@ -203,8 +211,8 @@ export class MedilogMedicationsTable extends LitElement {
                     (med.units?.toLowerCase().includes(this._filterUnits.toLowerCase()) ?? false);
                 
                 const antipyreticText = med.is_antipyretic 
-                    ? localize('medications_manager.yes').toLowerCase()
-                    : localize('medications_manager.no').toLowerCase();
+                    ? this._localize!('medications_manager.yes').toLowerCase()
+                    : this._localize!('medications_manager.no').toLowerCase();
                 const matchesAntipyretic = !this._filterAntipyretic.trim() || 
                     antipyreticText.includes(this._filterAntipyretic.toLowerCase());
                 

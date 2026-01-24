@@ -7,7 +7,7 @@ import { Medication, MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime,
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
 import { Utils } from "./utils";
-import { getLocalizeFunction } from "./localize/localize";
+import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { sharedStyles, sharedTableStyles } from "./shared-styles";
 import { DataStore } from "./data-store";
 
@@ -80,11 +80,21 @@ export class MedilogRecordsTable extends LitElement {
         .temp-dark-red { background-color: #d32f2f60; }
     `]
 
+    // Private properties
+    private _localize?: LocalizeFunction;
+
     // Public properties
     @property({ attribute: false }) public person?: PersonInfo
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public records?: (MedilogRecord | null)[];
     @property({ attribute: false }) public dataStore!: DataStore;
+
+    // Lifecycle methods
+    willUpdate(changedProperties: PropertyValues) {
+        if (!this._localize && this.hass) {
+            this._localize = getLocalizeFunction(this.hass);
+        }
+    }
 
     // Render method
     render() {
@@ -96,10 +106,9 @@ export class MedilogRecordsTable extends LitElement {
             return html`<ha-circular-progress active></ha-circular-progress>`;
         }
 
-        if (!this.dataStore) {
+        if (!this.dataStore || !this._localize) {
             return "Data store is not defined";
         }
-        const localize = getLocalizeFunction(this.hass!);
         const columnCount = 4; // Number of columns in the table
 
         return html`
@@ -165,19 +174,19 @@ export class MedilogRecordsTable extends LitElement {
     }
 
     private _formatDateSeparator(datetime: dayjs.Dayjs) {
-        const localize = getLocalizeFunction(this.hass!);
+        if (!this._localize) return '';
         const formattedDate = Utils.formatDate(datetime, true, false);
         const daysAgo = dayjs().startOf('day').diff(datetime.startOf('day'), 'day');
         
         let relativeText: string;
         if (daysAgo === 0) {
-            relativeText = localize('relative_date.today');
+            relativeText = this._localize('relative_date.today');
         } else if (daysAgo === 1) {
-            relativeText = localize('relative_date.days_ago_one').replace('{count}', '1');
+            relativeText = this._localize('relative_date.days_ago_one').replace('{count}', '1');
         } else if (daysAgo >= 2 && daysAgo <= 4) {
-            relativeText = localize('relative_date.days_ago_few').replace('{count}', daysAgo.toString());
+            relativeText = this._localize('relative_date.days_ago_few').replace('{count}', daysAgo.toString());
         } else {
-            relativeText = localize('relative_date.days_ago_many').replace('{count}', daysAgo.toString());
+            relativeText = this._localize('relative_date.days_ago_many').replace('{count}', daysAgo.toString());
         }
         
         return html`${formattedDate} <ha-icon icon="mdi:calendar" style="--mdc-icon-size: 16px; vertical-align: middle; margin: 0 4px;"></ha-icon> ${relativeText}`;

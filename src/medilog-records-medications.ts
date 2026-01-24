@@ -1,9 +1,9 @@
-import { LitElement, css, html } from "lit-element"
+import { LitElement, css, html, PropertyValues } from "lit-element"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import { Medication, MedilogRecord, PersonInfo } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
-import { getLocalizeFunction } from "./localize/localize";
+import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import "./medilog-records-table";
 import { DataStore } from "./data-store";
 
@@ -198,6 +198,7 @@ export class MedilogRecordsMedications extends LitElement {
     // Private properties
     private longPressTimer?: number;
     private readonly longPressDuration = 500; // ms
+    private _localize?: (key: string) => string;
 
     // Public properties
     @property({ attribute: false }) public person?: PersonInfo
@@ -224,12 +225,21 @@ export class MedilogRecordsMedications extends LitElement {
         }
     }
 
+    // Lifecycle methods
+    willUpdate(changedProperties: PropertyValues) {
+        if (!this._localize && this.hass) {
+            this._localize = getLocalizeFunction(this.hass);
+        }
+    }
+
     // Render method
     render() {
-        const localize = getLocalizeFunction(this.hass!);
+        if (!this._localize) {
+            return html`<div class="no-data"></div>`;
+        }
         
         if (!this.person) {
-            return html`<div class="no-data">${localize('medications.person_not_defined')}</div>`;
+            return html`<div class="no-data">${this._localize('medications.person_not_defined')}</div>`;
         }
 
         if (!this.records) {
@@ -239,7 +249,7 @@ export class MedilogRecordsMedications extends LitElement {
         const filteredRecords = this.records.filter(r => r !== null) as MedilogRecord[];
         
         if (filteredRecords.length === 0) {
-            return html`<div class="no-data">${localize('medications.no_data')}</div>`;
+            return html`<div class="no-data">${this._localize('medications.no_data')}</div>`;
         }
 
         const stats = this.calculateStats(filteredRecords);
@@ -258,7 +268,7 @@ export class MedilogRecordsMedications extends LitElement {
                     <table>
                         <thead>
                             <tr>
-                                <th class="medication-header">${localize('medications.medication_column')}</th>
+                                <th class="medication-header">${this._localize('medications.medication_column')}</th>
                                 ${columns.map(col => html`<th class="${this.drillDownState.level !== 'hour' ? 'period-header' : ''}" @click=${() => this.drillDownState.level !== 'hour' && this.drillDownAll(col.key)}>${col.label}</th>`)}
                             </tr>
                         </thead>
@@ -295,7 +305,7 @@ export class MedilogRecordsMedications extends LitElement {
                 ${this.selectedMedications.size > 0 ? html`
                     <div class="filtered-records">
                         <div class="filtered-records-title">
-                            ${Array.from(this.selectedMedications).join(', ')} - ${this.renderFilteredRecordsTitle(localize)}
+                            ${Array.from(this.selectedMedications).join(', ')} - ${this.renderFilteredRecordsTitle()}
                         </div>
                         <medilog-records-table 
                             .records=${this.getFilteredRecords()} 
@@ -336,23 +346,23 @@ export class MedilogRecordsMedications extends LitElement {
     }
 
     private renderBreadcrumb() {
-        const localize = getLocalizeFunction(this.hass!);
+        if (!this._localize) return '';
         const { level, year, month, day } = this.drillDownState;
         const items: Array<{ label: string; level: DrillDownLevel; state: Partial<DrillDownState> }> = [];
         
         // Build breadcrumb items based on current level
-        items.push({ label: localize('medications.all_years'), level: 'year', state: { level: 'year' } });
+        items.push({ label: this._localize('medications.all_years'), level: 'year', state: { level: 'year' } });
         
         if (year !== undefined) {
-            items.push({ label: `${localize('medications.year')} ${year}`, level: 'month', state: { level: 'month', year } });
+            items.push({ label: `${this._localize('medications.year')} ${year}`, level: 'month', state: { level: 'month', year } });
         }
         
         if (month !== undefined) {
-            items.push({ label: `${localize('medications.month')} ${month}`, level: 'day', state: { level: 'day', year, month } });
+            items.push({ label: `${this._localize('medications.month')} ${month}`, level: 'day', state: { level: 'day', year, month } });
         }
         
         if (day !== undefined) {
-            items.push({ label: `${localize('medications.day')} ${day}`, level: 'hour', state: { level: 'hour', year, month, day } });
+            items.push({ label: `${this._localize('medications.day')} ${day}`, level: 'hour', state: { level: 'hour', year, month, day } });
         }
 
         return html`
@@ -652,18 +662,19 @@ export class MedilogRecordsMedications extends LitElement {
         return allRecords.sort((a, b) => b.datetime.diff(a.datetime));
     }
 
-    private renderFilteredRecordsTitle(localize: (key: string) => string): string {
+    private renderFilteredRecordsTitle(): string {
+        if (!this._localize) return '';
         const { level, year, month, day } = this.drillDownState;
 
         switch (level) {
             case 'year':
-                return localize('medications.all_years');
+                return this._localize('medications.all_years');
             case 'month':
-                return `${localize('medications.year')} ${year}`;
+                return `${this._localize('medications.year')} ${year}`;
             case 'day':
-                return `${localize('medications.year')} ${year}, ${localize('medications.month')} ${month}`;
+                return `${this._localize('medications.year')} ${year}, ${this._localize('medications.month')} ${month}`;
             case 'hour':
-                return `${localize('medications.year')} ${year}, ${localize('medications.month')} ${month}, ${localize('medications.day')} ${day}`;
+                return `${this._localize('medications.year')} ${year}, ${this._localize('medications.month')} ${month}, ${this._localize('medications.day')} ${day}`;
             default:
                 return '';
         }

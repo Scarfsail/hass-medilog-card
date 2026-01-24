@@ -1,11 +1,11 @@
-import { LitElement, css, html, nothing } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
 import { customElement, property, state } from "lit/decorators.js";
 import { Medication } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { mdiClose } from '@mdi/js';
 import { sharedStyles } from "./shared-styles";
 import { loadHaForm } from "./load-ha-elements";
-import { getLocalizeFunction } from "./localize/localize";
+import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { MedicationsStore } from "./medications-store";
 
 export interface MedicationDialogParams {
@@ -47,6 +47,9 @@ export class MedilogMedicationDialog extends LitElement {
             gap: 8px;
         }
     `]
+
+    // Private properties
+    private _localize?: (key: string) => string;
 
     // Public properties
     @property({ attribute: false }) public hass!: HomeAssistant;
@@ -99,13 +102,19 @@ export class MedilogMedicationDialog extends LitElement {
         this._errors = {};
     }
 
+    // Lifecycle methods
+    willUpdate(changedProperties: PropertyValues) {
+        if (!this._localize && this.hass) {
+            this._localize = getLocalizeFunction(this.hass);
+        }
+    }
+
     // Render method
     render() {
-        if (!this._params || !this.hass) {
+        if (!this._params || !this._localize) {
             return nothing;
         }
 
-        const localize = getLocalizeFunction(this.hass!);
         const isEditMode = !!this._params.medication;
 
         return html`
@@ -113,14 +122,14 @@ export class MedilogMedicationDialog extends LitElement {
                 <ha-dialog-header slot="heading">
                     <ha-icon-button slot="navigationIcon" dialogAction="cancel" .path=${mdiClose}></ha-icon-button>
                     <span slot="title">${isEditMode
-                ? localize('medication_dialog.edit_title')
-                : localize('medication_dialog.create_title')}</span>
+                ? this._localize('medication_dialog.edit_title')
+                : this._localize('medication_dialog.create_title')}</span>
                 </ha-dialog-header>
                 
                 <div class="form-container">
                     <div class="field">
                         <ha-textfield
-                            .label=${localize('medication_dialog.name')}
+                            .label=${this._localize('medication_dialog.name')}
                             .value=${this._formData.name}
                             required
                             class="fill"
@@ -134,7 +143,7 @@ export class MedilogMedicationDialog extends LitElement {
 
                     <div class="field">
                         <ha-textfield
-                            .label=${localize('medication_dialog.units')}
+                            .label=${this._localize('medication_dialog.units')}
                             .value=${this._formData.units}
                             class="fill"
                             @input=${(e: Event) => {
@@ -150,12 +159,12 @@ export class MedilogMedicationDialog extends LitElement {
                 this._formData = { ...this._formData, is_antipyretic: (e.target as HTMLInputElement).checked };
             }}
                         ></ha-checkbox>
-                        <label>${localize('medication_dialog.is_antipyretic')}</label>
+                        <label>${this._localize('medication_dialog.is_antipyretic')}</label>
                     </div>
 
                     <div class="field">
                         <ha-textfield
-                            .label=${localize('medication_dialog.active_ingredient')}
+                            .label=${this._localize('medication_dialog.active_ingredient')}
                             .value=${this._formData.active_ingredient}
                             class="fill"
                             @input=${(e: Event) => {
@@ -167,16 +176,16 @@ export class MedilogMedicationDialog extends LitElement {
 
                 ${isEditMode ? html`
                     <ha-button slot="primaryAction" .variant=${"danger"} @click=${this._handleDelete} class="button-error">
-                        ${localize('common.delete')}
+                        ${this._localize('common.delete')}
                     </ha-button>
                     
                     <ha-button slot="primaryAction" @click=${this._handleDuplicate}>
-                        ${localize('common.duplicate')}
+                        ${this._localize('common.duplicate')}
                     </ha-button>
                 ` : nothing}
                 
                 <ha-button slot="primaryAction" .variant=${"success"} @click=${this._handleSave}>
-                    ${localize('common.save')}
+                    ${this._localize('common.save')}
                 </ha-button>
             </ha-dialog>
         `;
@@ -188,7 +197,7 @@ export class MedilogMedicationDialog extends LitElement {
 
         // Validate name is required
         if (!this._formData.name.trim()) {
-            this._errors.name = getLocalizeFunction(this.hass!)('medication_dialog.error_name_required');
+            this._errors.name = this._localize?.('medication_dialog.error_name_required') || '';
             return false;
         }
 
@@ -199,7 +208,7 @@ export class MedilogMedicationDialog extends LitElement {
         );
 
         if (existingMedication) {
-            this._errors.name = getLocalizeFunction(this.hass!)('medication_dialog.error_name_exists');
+            this._errors.name = this._localize?.('medication_dialog.error_name_exists') || '';
             return false;
         }
 
@@ -231,16 +240,15 @@ export class MedilogMedicationDialog extends LitElement {
             this._handleClose(true);
         } catch (error) {
             console.error('Error saving medication:', error);
-            this._errors.name = getLocalizeFunction(this.hass!)('medication_dialog.error_save_failed');
+            this._errors.name = this._localize?.('medication_dialog.error_save_failed') || '';
             this.requestUpdate();
         }
     }
 
     private async _handleDelete() {
-        if (!this._params?.medication) return;
+        if (!this._params?.medication || !this._localize) return;
 
-        const localize = getLocalizeFunction(this.hass!);
-        const confirmMessage = localize('medications_manager.delete_confirm').replace('{name}', this._params.medication.name);
+        const confirmMessage = this._localize('medications_manager.delete_confirm').replace('{name}', this._params.medication.name);
         
         if (!confirm(confirmMessage)) {
             return;
@@ -251,7 +259,7 @@ export class MedilogMedicationDialog extends LitElement {
             this._handleClose(true);
         } catch (error) {
             console.error('Error deleting medication:', error);
-            const errorMessage = localize('medications_manager.delete_in_use').replace('{name}', this._params.medication.name);
+            const errorMessage = this._localize('medications_manager.delete_in_use').replace('{name}', this._params.medication.name);
             alert(errorMessage);
         }
     }

@@ -1,10 +1,10 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, PropertyValues } from 'lit';
 //import ApexCharts from 'apexcharts';
 import dayjs from 'dayjs';
 import { customElement, property, query, state } from "lit/decorators.js";
 import { Medication, MedilogRecord } from './models';
 import { MedicationsStore } from './medications-store';
-import { getLocalizeFunction } from './localize/localize';
+import { getLocalizeFunction, LocalizeFunction } from './localize/localize';
 import type { HomeAssistant } from '../hass-frontend/src/types';
 
 type ApexCharts = any;
@@ -37,6 +37,7 @@ class MedilogRecordsChart extends LitElement {
 
     // Private properties
     private chart?: ApexCharts;
+    private _localize?: (key: string) => string;
 
     // Public properties
     @property({ attribute: false }) public hass!: HomeAssistant;
@@ -50,6 +51,12 @@ class MedilogRecordsChart extends LitElement {
     @query('#chart') private chartElement?: HTMLElement;
 
     // Lifecycle methods
+    willUpdate(changedProperties: PropertyValues) {
+        if (!this._localize && this.hass) {
+            this._localize = getLocalizeFunction(this.hass);
+        }
+    }
+
     updated(changedProperties: Map<string, any>) {
         if (changedProperties.has('records') || changedProperties.has('_showMedications')) {
             this.createChart();
@@ -63,7 +70,7 @@ class MedilogRecordsChart extends LitElement {
 
     // Render method
     render() {
-        const localize = getLocalizeFunction(this.hass);
+        if (!this._localize) return html``;
         return html`
             <div id="chart"></div>
             <div class="chart-header">
@@ -72,7 +79,7 @@ class MedilogRecordsChart extends LitElement {
                         .checked=${this._showMedications}
                         @change=${this._toggleMedications}
                     ></ha-checkbox>
-                    <label>${localize('chart.show_medications')}</label>
+                    <label>${this._localize('chart.show_medications')}</label>
                 </div>
             </div>
 

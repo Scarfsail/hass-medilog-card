@@ -1,9 +1,9 @@
-import { LitElement, css, html, nothing } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
 import { customElement, property, state } from "lit/decorators.js";
 import { Medication, MedilogRecord, PersonInfo } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { sharedStyles } from "./shared-styles";
-import { getLocalizeFunction } from "./localize/localize";
+import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { DataStore } from "./data-store";
 import "./medilog-records-table";
 
@@ -59,6 +59,7 @@ export class MedilogMedicationsUsage extends LitElement {
 
     // Private properties
     private _recordsChangeListener?: () => void;
+    private _localize?: (key: string) => string;
 
     // Public properties
     @property({ attribute: false }) public hass?: HomeAssistant;
@@ -94,13 +95,19 @@ export class MedilogMedicationsUsage extends LitElement {
         }
     }
 
+    // Lifecycle methods
+    willUpdate(changedProperties: PropertyValues) {
+        if (!this._localize && this.hass) {
+            this._localize = getLocalizeFunction(this.hass);
+        }
+    }
+
     // Render method
     render() {
-        if (!this.hass) {
+        if (!this._localize) {
             return nothing;
         }
 
-        const localize = getLocalizeFunction(this.hass);
         const medications = (this.dataStore?.medications?.all || [])
             .slice()
             .sort((a, b) => a.name.localeCompare(b.name));
@@ -109,7 +116,7 @@ export class MedilogMedicationsUsage extends LitElement {
             <div class="container">
                 <div class="medication-selector">
                     <ha-select
-                        .label=${localize('medications_usage.select_medication')}
+                        .label=${this._localize('medications_usage.select_medication')}
                         .value=${this._selectedMedicationId || ''}
                         @selected=${this._handleMedicationSelected}
                         @closed=${(e: Event) => e.stopPropagation()}
@@ -131,26 +138,23 @@ export class MedilogMedicationsUsage extends LitElement {
     // Private helper methods
     private _renderUsageContent() {
         if (!this._selectedMedicationId) {
-            const localize = getLocalizeFunction(this.hass!);
             return html`
                 <div class="empty-state">
                     <ha-icon icon="mdi:pill-multiple"></ha-icon>
-                    <p>${localize('medications_usage.select_medication_prompt')}</p>
+                    <p>${this._localize?.('medications_usage.select_medication_prompt')}</p>
                 </div>
             `;
         }
 
         if (this._personUsageData.size === 0) {
-            const localize = getLocalizeFunction(this.hass!);
             return html`
                 <div class="empty-state">
                     <ha-icon icon="mdi:information-outline"></ha-icon>
-                    <p>${localize('medications_usage.no_usage_data')}</p>
+                    <p>${this._localize?.('medications_usage.no_usage_data')}</p>
                 </div>
             `;
         }
 
-        const localize = getLocalizeFunction(this.hass!);
         const personsWithUsage = Array.from(this._personUsageData.entries())
             .sort(([entityA], [entityB]) => {
                 const personA = this.dataStore.persons.getPerson(entityA);
@@ -182,8 +186,8 @@ export class MedilogMedicationsUsage extends LitElement {
     }
 
     private _getPersonHeader(person: PersonInfo, count: number): string {
-        const localize = getLocalizeFunction(this.hass!);
-        return `${person.name} (${count} ${count === 1 ? localize('medications_usage.record') : localize('medications_usage.records')})`;
+        if (!this._localize) return '';
+        return `${person.name} (${count} ${count === 1 ? this._localize('medications_usage.record') : this._localize('medications_usage.records')})`;
     }
 
     private async _handleMedicationSelected(e: CustomEvent) {

@@ -6,7 +6,7 @@ import 'dayjs/locale/cs';
 import { MedilogRecord, MedilogRecordRaw, MedilogRecordsGroupByTime, PersonInfo, PersonInfoRaw, Medication } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { MedilogRecordDetailDialogParams } from "./medilog-record-detail-dialog";
-import { getLocalizeFunction } from "./localize/localize";
+import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import "./medilog-records"
 import "./medilog-records-medications"
 import { showMedilogRecordDetailDialog } from "./medilog-records-table";
@@ -30,6 +30,7 @@ export class MedilogPersonDetail extends LitElement {
     // Private properties
     private _person?: PersonInfo
     private _personStore?: MedilogPersonRecordsStore
+    private _localize?: LocalizeFunction;
 
     // Public properties
     @property({ attribute: false }) public set person(value: PersonInfo) {
@@ -54,16 +55,21 @@ export class MedilogPersonDetail extends LitElement {
         super.disconnectedCallback();
     }
 
+    willUpdate(changedProperties: PropertyValues) {
+        if (!this._localize && changedProperties.has('hass') && this.hass) {
+            this._localize = getLocalizeFunction(this.hass);
+        }
+    }
+
     // Render method
     render() {
         if (!this._person) {
             return "Person is not defined";
         }
-        if (!this._personStore) {
+        if (!this._personStore || !this._localize) {
             return html`<ha-circular-progress active></ha-circular-progress>`;
         }
 
-        const localize = getLocalizeFunction(this.hass!);
         return html`
             <div class="controls">
                 <div class="view-toggle">
@@ -76,7 +82,7 @@ export class MedilogPersonDetail extends LitElement {
                 </div>
                 <ha-button @click=${this.addNewRecord} .appearance=${'plain'}>
                     <ha-icon icon="mdi:plus"></ha-icon> 
-                    ${localize('actions.add_record')}
+                    ${this._localize('actions.add_record')}
                 </ha-button>
             </div>
             

@@ -2,6 +2,7 @@ import type { HomeAssistant } from "../hass-frontend/src/types";
 import { MedicationsStore } from "./medications-store";
 import { PersonsInfo } from "./persons-info";
 import { MedilogRecords } from "./medilog-records-store";
+import { CacheConfig } from "./cache-config";
 
 /**
  * Centralized data storage for the MediLog card.
@@ -42,15 +43,11 @@ export class DataStore {
     }
 
     /**
-     * Get medications and automatically refresh if data is stale (>5 minutes old)
+     * Get medications and automatically refresh if data is stale (>1 minute old)
      */
     async getMedications(): Promise<void> {
-        const lastRefresh = this.medications.lastRefreshTime;
-        if (lastRefresh) {
-            const oneMinuteAgo = Date.now() - (1 * 60 * 1000);
-            if (lastRefresh.getTime() < oneMinuteAgo) {
-                await this.medications.fetch();
-            }
+        if (CacheConfig.isStale(this.medications.lastRefreshTime)) {
+            await this.medications.fetch();
         }
     }
 

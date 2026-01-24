@@ -1,6 +1,7 @@
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { PersonInfo } from "./models";
 import { MedilogPersonRecordsStore } from "./medilog-person-records-store";
+import { CacheConfig } from "./cache-config";
 
 /**
  * Container class for medilog records with lazy loading per person.
@@ -24,7 +25,7 @@ export class MedilogRecords extends EventTarget {
     /**
      * Get the person records store for a specific person.
      * Lazy loads if not already cached, otherwise returns cached store.
-     * Automatically re-fetches data if last refresh was more than 5 minutes ago.
+     * Automatically re-fetches data if last refresh was more than 1 minute ago.
      * Always returns a store (either freshly created or existing).
      */
     async getStoreForPerson(person: PersonInfo, forceRefresh: boolean = false): Promise<MedilogPersonRecordsStore> {
@@ -41,16 +42,8 @@ export class MedilogRecords extends EventTarget {
             await store.fetch();
             this._storesByPerson.set(person.entity, store);
         } else {
-            let doRefresh = forceRefresh;
-            // Check if data is stale (more than 5 minutes old)
-            const lastRefresh = store.lastRefreshTime;
-            if (lastRefresh) {
-                const oneMinuteAgo = Date.now() - (1 * 60 * 1000);
-                if (lastRefresh.getTime() < oneMinuteAgo) {
-                    doRefresh = true;
-                }
-            }
-            if (doRefresh) {
+            // Check if data should be refreshed
+            if (CacheConfig.shouldRefresh(store.lastRefreshTime, forceRefresh)) {
                 await store.fetch();
             }
         }

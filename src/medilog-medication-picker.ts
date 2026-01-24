@@ -1,11 +1,11 @@
-import { LitElement, css, html, nothing } from "lit-element"
+import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
 import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import { MedilogRecord, Medication } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
 import { mdiClose, mdiPencil } from '@mdi/js';
 import { sharedStyles, sharedTableStyles } from "./shared-styles";
-import { getLocalizeFunction } from "./localize/localize";
+import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
 import { Utils } from "./utils";
 import { MedicationsStore } from "./medications-store";
 import { showMedicationDialog } from "./medilog-medications-manager";
@@ -115,6 +115,9 @@ export class MedilogMedicationPicker extends LitElement {
         }
     `]
 
+    // Private properties
+    private _localize?: LocalizeFunction;
+
     // Public properties
     @property({ attribute: false }) public hass!: HomeAssistant;
 
@@ -130,13 +133,19 @@ export class MedilogMedicationPicker extends LitElement {
         this._calculateSortedMedications();
     }
 
+    // Lifecycle methods
+    willUpdate(changedProperties: PropertyValues) {
+        if (!this._localize && this.hass) {
+            this._localize = getLocalizeFunction(this.hass);
+        }
+    }
+
     // Render method
     render() {
-        if (!this._params || !this.hass) {
+        if (!this._params || !this._localize) {
             return nothing;
         }
 
-        const localize = getLocalizeFunction(this.hass);
         const filteredMedications = this._getFilteredMedications();
         const showAddNew = this._shouldShowAddNew();
 
@@ -147,7 +156,7 @@ export class MedilogMedicationPicker extends LitElement {
                         <ha-textfield
                             id="filter-input"
                             class="filter-input"
-                            .label=${localize('medication_picker.filter_placeholder')}
+                            .label=${this._localize('medication_picker.filter_placeholder')}
                             .value=${this._filterText}
                             tabindex="0"
                             @input=${(e: Event) => {
@@ -160,14 +169,14 @@ export class MedilogMedicationPicker extends LitElement {
                     <div class="table-container">
                         ${filteredMedications.length === 0 && !showAddNew ? html`
                             <div class="empty-state">
-                                ${localize('medications_manager.no_results')}
+                                ${this._localize('medications_manager.no_results')}
                             </div>
                         ` : html`
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>${localize('medication_picker.medication_name')}</th>
-                                        <th>${localize('medication_picker.last_taken')}</th>
+                                        <th>${this._localize('medication_picker.medication_name')}</th>
+                                        <th>${this._localize('medication_picker.last_taken')}</th>
                                         <th class="actions-column"></th>
                                     </tr>
                                 </thead>
@@ -178,13 +187,13 @@ export class MedilogMedicationPicker extends LitElement {
                                             <td class="last-taken ${!item.lastTaken ? 'never-taken' : ''}">
                                                 ${item.lastTaken 
                                                     ? Utils.formatDurationFromTo(item.lastTaken)
-                                                    : localize('medication_picker.never')}
+                                                    : this._localize!('medication_picker.never')}
                                             </td>
                                             <td class="actions-column">
                                                 <ha-icon-button
                                                     class="edit-icon"
                                                     .path=${mdiPencil}
-                                                    .label=${localize('common.edit')}
+                                                    .label=${this._localize!('common.edit')}
                                                     @click=${(e: Event) => this._handleEdit(e, item.med)}
                                                 ></ha-icon-button>
                                             </td>
@@ -192,7 +201,7 @@ export class MedilogMedicationPicker extends LitElement {
                                     `)}
                                     ${showAddNew ? html`
                                         <tr class="add-new-row" @click=${this._handleAddNew}>
-                                            <td colspan="3">${localize('medication_picker.add_new_medication')}</td>
+                                            <td colspan="3">${this._localize('medication_picker.add_new_medication')}</td>
                                         </tr>
                                     ` : nothing}
                                 </tbody>

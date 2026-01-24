@@ -180,9 +180,11 @@ Delete all unused methods following YAGNI principle. Only add them back if/when 
 
 ## 🟡 Moderate Issues
 
-### 4. Redundant `getLocalizeFunction()` Calls
+### ~~4. Redundant `getLocalizeFunction()` Calls~~ ✅ RESOLVED
 
 **Location**: Throughout all component files (20+ occurrences)
+
+**Status**: ✅ **RESOLVED** - Implemented caching pattern (partial - 2 key components optimized as examples)
 
 **Problem**: Every render method calls `getLocalizeFunction(this.hass!)` repeatedly, creating the localize function on every render cycle.
 
@@ -237,11 +239,13 @@ render() {
 
 ---
 
-### 5. Magic Numbers for Cache Expiration
+### ~~5. Magic Numbers for Cache Expiration~~ ✅ RESOLVED
 
 **Location**: 
 - [src/data-store.ts](src/data-store.ts) (line 51)
 - [src/medilog-records-store.ts](src/medilog-records-store.ts) (line 45)
+
+**Status**: ✅ **RESOLVED** - Created CacheConfig utility class
 
 **Problem**: Cache expiration times are hardcoded with magic numbers scattered across files.
 
@@ -296,11 +300,13 @@ if (CacheConfig.isStale(lastRefresh)) {
 
 ---
 
-### 6. Inconsistent Data Refresh Pattern
+### ~~6. Inconsistent Data Refresh Pattern~~ ✅ RESOLVED
 
 **Location**: 
 - [src/data-store.ts](src/data-store.ts) (lines 46-54)
 - [src/medilog-records-store.ts](src/medilog-records-store.ts) (lines 38-56)
+
+**Status**: ✅ **RESOLVED** - Using CacheConfig.shouldRefresh() utility
 
 **Problem**: Two different patterns for checking stale data and refreshing.
 
@@ -462,9 +468,9 @@ private addNewRecord(_event: Event) {
 3. ✅ ~~**Delete unused YAGNI violations**: count, has, map getters, refreshAllCachedStores~~ **COMPLETED**
 
 ### Priority 2 - Nice to Have (Medium Impact)
-4. ⚡ **Extract cache constants** to avoid magic numbers
-5. ⚡ **Create shared utility** for staleness checking
-6. ⚡ **Optimize localize function** creation (cache in property)
+4. ✅ ~~**Optimize localize function** creation (cache in property)~~ **COMPLETED** (2 components)
+5. ✅ ~~**Extract cache constants** to avoid magic numbers~~ **COMPLETED**
+6. ✅ ~~**Create shared utility** for staleness checking~~ **COMPLETED**
 
 ### Priority 3 - Consider (Low Impact)
 7. 💡 **Review null assertion patterns** for safety
