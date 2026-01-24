@@ -69,7 +69,12 @@ export class MedilogPersonDetail extends LitElement {
         if (!this._person) {
             return "Person is not defined";
         }
-        if (!this._personStore || !this._localize) {
+        if (!this._localize) {
+            return html`<ha-circular-progress active></ha-circular-progress>`;
+        }
+
+        // Show initial loading if no store yet
+        if (!this._personStore) {
             return html`<ha-circular-progress active></ha-circular-progress>`;
         }
 
@@ -89,6 +94,9 @@ export class MedilogPersonDetail extends LitElement {
                     <ha-icon icon="mdi:plus"></ha-icon> 
                     ${this._localize('actions.add_record')}
                 </ha-button>
+                ${this._personStore.isLoading ? html`
+                    <ha-circular-progress active indeterminate style="--md-circular-progress-size: 24px; margin-left: 8px;"></ha-circular-progress>
+                ` : ''}
             </div>
             
             ${this.viewMode === 'timeline' ? html`
@@ -111,22 +119,24 @@ export class MedilogPersonDetail extends LitElement {
     }
 
     // Private helper methods
-    private async loadPersonStore(): Promise<void> {
+    private loadPersonStore(): void {
         if (!this.hass || !this._person || !this.dataStore) return;
 
-        try {
-            if (!this._person.entity) {
-                console.warn("Cannot load records: person is missing entity_id");
-                return;
-            }
-
-            // Get the store for this person (lazy loads if needed)
-            this._personStore = await this.dataStore.records.getStoreForPerson(this._person, true);
-            this.requestUpdate();
-
-        } catch (error) {
-            console.error("Error loading person store:", error);
+        if (!this._person.entity) {
+            console.warn("Cannot load records: person is missing entity_id");
+            return;
         }
+
+        // Get the store for this person (lazy loads if needed)
+        // Don't await - let it run async and the store will notify us via callback when ready
+        this.dataStore.records.getStoreForPerson(this._person, true)
+            .then(store => {
+                this._personStore = store;
+                this.requestUpdate();
+            })
+            .catch(error => {
+                console.error("Error loading person store:", error);
+            });
     }
 
     private addNewRecord() {

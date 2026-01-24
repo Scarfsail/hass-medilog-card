@@ -15,6 +15,7 @@ export class MedilogPersonRecordsStore {
     private _hass: HomeAssistant;
     private _onRecordsChanged: () => void;
     private _lastRefreshTime?: Date;
+    private _isLoading = false;
 
     constructor(personEntity: string, hass: HomeAssistant, onRecordsChanged: () => void) {
         this._personEntity = personEntity;
@@ -51,27 +52,41 @@ export class MedilogPersonRecordsStore {
     }
 
     /**
+     * Check if the store is currently loading data
+     */
+    get isLoading(): boolean {
+        return this._isLoading;
+    }
+
+    /**
      * Fetch records from the backend and update the store
      */
     async fetch(): Promise<void> {
+        this._isLoading = true;
+
         try {
-            const response = await this._hass.callService('medilog', 'get_records', 
-                { person_id: this._personEntity }, 
-                {}, 
-                true, 
+            const response = await this._hass.callService('medilog', 'get_records',
+                { person_id: this._personEntity },
+                {},
+                true,
                 true
             );
-            
+
             if (response && response.response.records) {
                 const records = (response.response.records as MedilogRecordRaw[])
                     .map(record => Utils.convertMedilogRecordRawToMedilogRecord(record)!)
                     .sort((a, b) => b.datetime.diff(a.datetime));
-
-                this._updateRecords(records);
+                this._all = records;
+                this._grouped = this._groupRecordsByPeriods(records);
+                this._isLoading = false;
                 this._lastRefreshTime = new Date();
+                this._onRecordsChanged();
+
             }
         } catch (error) {
             console.error(`Error fetching records for person ${this._personEntity}:`, error);
+            this._isLoading = false;
+            this._onRecordsChanged();
         }
     }
 
@@ -89,7 +104,7 @@ export class MedilogPersonRecordsStore {
                 note: record.note?.trim(),
                 person_id: this._personEntity
             } as MedilogRecordRaw, {}, true, false);
-            
+
             // Refresh data after successful save
             await this.fetch();
         } catch (error) {
@@ -108,7 +123,7 @@ export class MedilogPersonRecordsStore {
                 person_id: this._personEntity,
                 id: recordId,
             }, {}, true, false);
-            
+
             // Refresh data after successful delete
             await this.fetch();
         } catch (error) {
@@ -117,14 +132,6 @@ export class MedilogPersonRecordsStore {
         }
     }
 
-    /**
-     * Update the internal records and rebuild grouped view
-     */
-    private _updateRecords(records: MedilogRecord[]): void {
-        this._all = records;
-        this._grouped = this._groupRecordsByPeriods(records);
-        this._onRecordsChanged();
-    }
 
     /**
      * Group records by time periods (multi-day gaps create new groups)
@@ -132,10 +139,10 @@ export class MedilogPersonRecordsStore {
     private _groupRecordsByPeriods(records: MedilogRecord[]): MedilogRecordsGroupByTime[] {
         const groups: MedilogRecordsGroupByTime[] = [];
         let prevTime: dayjs.Dayjs | null = null;
-        
+
         for (const record of records) {
             const recordTime = dayjs(record.datetime);
-            
+
             // Create a new group if this is the first record or there's a gap of more than 1 day
             if (prevTime == null || prevTime.diff(recordTime, "days") > 1) {
                 groups.push({
@@ -144,14 +151,14 @@ export class MedilogPersonRecordsStore {
                     records: []
                 })
             }
-            
+
             const lastGroup = groups[groups.length - 1]
-            
+
             // Add a day separator (null) if the day changes within a group
             if (prevTime != null && prevTime.day() != recordTime.day() && lastGroup.records.length > 0) {
                 lastGroup.records.push(null);
             }
-            
+
             prevTime = recordTime;
             lastGroup.records.push(record);
             lastGroup.from = prevTime;
