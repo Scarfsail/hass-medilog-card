@@ -51,13 +51,6 @@ export class PersonsInfo {
     }
 
     /**
-     * Get the persons Map for direct access
-     */
-    get map(): Map<string, PersonInfo> {
-        return this._personsMap;
-    }
-
-    /**
      * Get a person by entity ID with O(1) lookup
      */
     getPerson(entity: string | undefined): PersonInfo | undefined {
@@ -91,20 +84,5 @@ export class PersonsInfo {
     private update(persons: PersonInfo[]): void {
         this._persons = persons;
         this._personsMap = new Map(persons.map(p => [p.entity, p]));
-    }
-
-    /**
-     * Get the count of persons
-     */
-    get count(): number {
-        return this._persons.length;
-    }
-
-    /**
-     * Check if a person exists by entity ID
-     */
-    has(entity: string | undefined): boolean {
-        if (!entity) return false;
-        return this._personsMap.has(entity);
     }
 }

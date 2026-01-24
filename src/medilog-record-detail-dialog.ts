@@ -298,13 +298,8 @@ export class MedilogRecordDetailDialog extends LitElement {
             return;
 
         try {
-            if (this._editedRecord.id) {
-                // Update existing record
-                await this._params.personStore.updateRecord(this._editedRecord);
-            } else {
-                // Add new record
-                await this._params.personStore.addRecord(this._editedRecord);
-            }
+            // Save record (handles both add and update)
+            await this._params.personStore.saveRecord(this._editedRecord);
             this.closeDialog();
         } catch (error) {
             console.error("Error saving record:", error);

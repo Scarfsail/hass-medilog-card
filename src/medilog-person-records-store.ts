@@ -76,32 +76,9 @@ export class MedilogPersonRecordsStore {
     }
 
     /**
-     * Add a new record for this person
+     * Save a record (add new or update existing) for this person
      */
-    async addRecord(record: MedilogRecord): Promise<void> {
-        try {
-            await this._hass.callService('medilog', 'add_or_update_record', {
-                id: undefined,
-                datetime: record.datetime.toISOString(),
-                temperature: record.temperature,
-                medication_id: record.medication_id,
-                medication_amount: record.medication_amount,
-                note: record.note?.trim(),
-                person_id: this._personEntity
-            } as MedilogRecordRaw, {}, true, false);
-            
-            // Refresh data after successful add
-            await this.fetch();
-        } catch (error) {
-            console.error(`Error adding record for person ${this._personEntity}:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * Update an existing record for this person
-     */
-    async updateRecord(record: MedilogRecord): Promise<void> {
+    async saveRecord(record: MedilogRecord): Promise<void> {
         try {
             await this._hass.callService('medilog', 'add_or_update_record', {
                 id: record.id,
@@ -113,10 +90,11 @@ export class MedilogPersonRecordsStore {
                 person_id: this._personEntity
             } as MedilogRecordRaw, {}, true, false);
             
-            // Refresh data after successful update
+            // Refresh data after successful save
             await this.fetch();
         } catch (error) {
-            console.error(`Error updating record for person ${this._personEntity}:`, error);
+            const action = record.id ? 'updating' : 'adding';
+            console.error(`Error ${action} record for person ${this._personEntity}:`, error);
             throw error;
         }
     }

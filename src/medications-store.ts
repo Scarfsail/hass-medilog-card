@@ -111,13 +111,6 @@ export class MedicationsStore {
     }
 
     /**
-     * Get the medications Map for direct access
-     */
-    get map(): Map<string, Medication> {
-        return this._medicationsMap;
-    }
-
-    /**
      * Get a medication by ID with O(1) lookup
      */
     getMedication(id: string | undefined): Medication | undefined {
@@ -141,20 +134,5 @@ export class MedicationsStore {
     private _update(medications: Medication[]): void {
         this._medications = medications;
         this._medicationsMap = new Map(medications.map(m => [m.id, m]));
-    }
-
-    /**
-     * Get the count of medications
-     */
-    get count(): number {
-        return this._medications.length;
-    }
-
-    /**
-     * Check if a medication exists by ID
-     */
-    has(id: string | undefined): boolean {
-        if (!id) return false;
-        return this._medicationsMap.has(id);
     }
 }

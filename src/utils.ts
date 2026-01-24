@@ -49,44 +49,6 @@ export class Utils {
         return `${minutes}m ${seconds}s`;
     }
 
-    public static getDayString(date: dayjs.Dayjs, shortName: boolean = false): string {
-        return Utils.getDayStringFromIsoDayOfWeek(date.isoWeekday(), shortName);
-    }
-
-    public static getDayStringFromIsoDayOfWeek(isoDayOfWeek: number, shortName: boolean = false): string {
-        switch (isoDayOfWeek) {
-            case 1: return shortName ? "Po" : "pondělí";
-            case 2: return shortName ? "Út" : "úterý";
-            case 3: return shortName ? "St" : "středa";
-            case 4: return shortName ? "Čt" : "čtvrtek";
-            case 5: return shortName ? "Pá" : "pátek";
-            case 6: return shortName ? "So" : "sobota";
-            case 7: return shortName ? "Ne" : "neděle";
-            default: throw ("Unsupported day of week: " + isoDayOfWeek);
-        }
-    }
-    public static getMonthString(date: dayjs.Dayjs, shortName: boolean = false): string {
-        return Utils.getMonthStringFromMonthNumber(date.month(), shortName);
-    }
-    public static getMonthStringFromMonthNumber(monthNumber: number, shortName: boolean = false): string {
-        switch (monthNumber) {
-            case 0: return shortName ? "Led" : "Leden (1)";
-            case 1: return shortName ? "Úno" : "Únor (2)";
-            case 2: return shortName ? "Bře" : "Březen (3)";
-            case 3: return shortName ? "Dub" : "Duben (4)";
-            case 4: return shortName ? "Kvě" : "Květen (5)";
-            case 5: return shortName ? "Črv" : "Červen (6)";
-            case 6: return shortName ? "Čvn" : "Červenec (7)";
-            case 7: return shortName ? "Srp" : "Srpen (8)";
-            case 8: return shortName ? "Zář" : "Září (9)";
-            case 9: return shortName ? "Říj" : "Říjen (10)";
-            case 10: return shortName ? "List" : "Listopad (11)";
-            case 11: return shortName ? "Pro" : "Prosinec (12)";
-
-            default: throw ("Unsupported day of month: " + monthNumber);
-        }
-    }
-
     public static formatDaysAgoAsName(dateTimeFrom: dayjs.ConfigType): string {
         const days = Math.floor(dayjs.duration(this.getDate(dayjs(dateTimeFrom)).diff(this.getDate(dayjs()))).asDays());
         if (days == 0)
