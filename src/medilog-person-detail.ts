@@ -36,14 +36,17 @@ export class MedilogPersonDetail extends LitElement {
     @property({ attribute: false }) public set person(value: PersonInfo) {
         const prevPerson = this._person;
         this._person = value;
-        if (prevPerson !== value)
+        if (prevPerson !== value) {
+            this.showAllGroups = false;
             this.loadPersonStore();
+        }
     }
     @property({ attribute: false }) public hass?: HomeAssistant;
     @property({ attribute: false }) public dataStore!: DataStore;
 
     // State properties
     @state() private viewMode: 'timeline' | 'medications' = 'timeline';
+    @state() private showAllGroups = false;
 
     // Lifecycle methods
     connectedCallback() {
@@ -70,6 +73,8 @@ export class MedilogPersonDetail extends LitElement {
             return html`<ha-circular-progress active></ha-circular-progress>`;
         }
 
+        const { visibleGroups, hasMoreGroups } = this._getVisibleGroups();
+
         return html`
             <div class="controls">
                 <div class="view-toggle">
@@ -87,11 +92,18 @@ export class MedilogPersonDetail extends LitElement {
             </div>
             
             ${this.viewMode === 'timeline' ? html`
-                ${this._personStore.grouped.map((group, idx) => html`
+                ${visibleGroups.map((group, idx) => html`
                     <ha-expansion-panel .outlined=${true} .expanded=${idx == 0} header=${group.from ? `${Utils.formatDate(group.from)} - ${Utils.formatDate(group.to)}` : Utils.formatDate(group.to)}>
                         <medilog-records .records=${group.records} .hass=${this.hass} .person=${this._person} .dataStore=${this.dataStore}></medilog-records>
                     </ha-expansion-panel>
                 `)}
+                ${hasMoreGroups ? html`
+                    <div style="margin: 16px;">
+                        <ha-button @click=${this._showMoreGroups}>
+                            ${this._localize('actions.show_more')}
+                        </ha-button>
+                    </div>
+                ` : ''}
             ` : html`
                 <medilog-records-medications .records=${this._personStore.all} .hass=${this.hass} .person=${this._person} .dataStore=${this.dataStore}></medilog-records-medications>
             `}
@@ -129,5 +141,32 @@ export class MedilogPersonDetail extends LitElement {
             }
         })
 
+    }
+
+    private _getVisibleGroups(): { visibleGroups: MedilogRecordsGroupByTime[], hasMoreGroups: boolean } {
+        if (!this._personStore || this.showAllGroups) {
+            return { 
+                visibleGroups: this._personStore?.grouped || [], 
+                hasMoreGroups: false 
+            };
+        }
+
+        const threeMonthsAgo = dayjs().subtract(3, 'months');
+        const recentGroups = this._personStore.grouped.filter(group => 
+            group.to.isAfter(threeMonthsAgo)
+        );
+
+        // If no groups have records in the last 3 months, show the last group (most recent)
+        const visibleGroups = recentGroups.length > 0 
+            ? recentGroups 
+            : this._personStore.grouped.slice(0, 1);
+
+        const hasMoreGroups = visibleGroups.length < this._personStore.grouped.length;
+
+        return { visibleGroups, hasMoreGroups };
+    }
+
+    private _showMoreGroups() {
+        this.showAllGroups = true;
     }
 }

@@ -84,7 +84,8 @@
     "days_ago_many": "Před {count} dny"
   },
   "actions": {
-    "add_record": "Přidat"
+    "add_record": "Přidat",
+    "show_more": "Více"
   },
   "medications": {
     "all_years": "Všechny roky",
