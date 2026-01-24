@@ -31,4 +31,3 @@ Customize the card further by overriding available options. Ensure your sensor e
 ## License
 Licensed under the MIT License.
 
-
