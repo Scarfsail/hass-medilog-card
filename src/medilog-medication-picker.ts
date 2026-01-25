@@ -33,7 +33,6 @@ export class MedilogMedicationPicker extends LitElement {
             position: sticky;
             top: 0;
             background: var(--card-background-color);
-            z-index: 1;
             padding: 16px 24px 0 24px;
         }
 

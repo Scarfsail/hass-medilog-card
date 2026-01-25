@@ -44,7 +44,6 @@ export class MedilogCard extends LitElement implements LovelaceCard {
     .tabs-container {
         position: sticky;
         top: 0;
-        z-index: 10;
         background: var(--card-background-color);
         display: flex;
         gap: 4px;

@@ -59,7 +59,6 @@ export class MedilogRecordsTable extends LitElement {
 
         .temperature-content {
             position: relative;
-            z-index: 1;
             padding: 12px 16px;
             font-weight: 500;
         }

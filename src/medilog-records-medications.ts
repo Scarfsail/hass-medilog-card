@@ -99,7 +99,6 @@ export class MedilogRecordsMedications extends LitElement {
             font-weight: 500;
             position: sticky;
             top: 0;
-            z-index: 2;
         }
 
         .matrix-table th.period-header {
@@ -116,7 +115,6 @@ export class MedilogRecordsMedications extends LitElement {
             width: 1%;
             white-space: nowrap;
             left: 0;
-            z-index: 3;
             padding: 8px;
         }
 
@@ -126,7 +124,6 @@ export class MedilogRecordsMedications extends LitElement {
             background-color: var(--card-background-color);
             position: sticky;
             left: 0;
-            z-index: 1;
             width: 1%;
             white-space: nowrap;
             padding: 8px;
