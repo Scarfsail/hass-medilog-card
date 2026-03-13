@@ -2,7 +2,6 @@ import { LitElement, css, html, nothing, PropertyValues } from "lit-element"
 import { customElement, property, state } from "lit/decorators.js";
 import { Medication } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
-import { mdiClose } from '@mdi/js';
 import { sharedStyles } from "./shared-styles";
 import { loadHaForm } from "./load-ha-elements";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
@@ -116,16 +115,12 @@ export class MedilogMedicationDialog extends LitElement {
         }
 
         const isEditMode = !!this._params.medication;
+        const dialogTitle = isEditMode
+            ? this._localize('medication_dialog.edit_title')
+            : this._localize('medication_dialog.create_title');
 
         return html`
-            <ha-dialog open .heading=${true} @closed=${this._handleClose} @close-dialog=${this._handleClose}>
-                <ha-dialog-header slot="heading">
-                    <ha-icon-button slot="navigationIcon" dialogAction="cancel" .path=${mdiClose}></ha-icon-button>
-                    <span slot="title">${isEditMode
-                ? this._localize('medication_dialog.edit_title')
-                : this._localize('medication_dialog.create_title')}</span>
-                </ha-dialog-header>
-                
+            <ha-dialog open .hass=${this.hass} .headerTitle=${dialogTitle} @closed=${() => this._handleClose()}>
                 <div class="form-container">
                     <div class="field">
                         <ha-textfield
@@ -174,19 +169,25 @@ export class MedilogMedicationDialog extends LitElement {
                     </div>
                 </div>
 
-                ${isEditMode ? html`
-                    <ha-button slot="primaryAction" .variant=${"danger"} @click=${this._handleDelete} class="button-error">
-                        ${this._localize('common.delete')}
-                    </ha-button>
-                    
-                    <ha-button slot="primaryAction" @click=${this._handleDuplicate}>
-                        ${this._localize('common.duplicate')}
-                    </ha-button>
-                ` : nothing}
-                
-                <ha-button slot="primaryAction" .variant=${"success"} @click=${this._handleSave}>
-                    ${this._localize('common.save')}
-                </ha-button>
+                <div slot="footer" class="dialog-footer">
+                    ${isEditMode ? html`
+                        <div class="dialog-footer__secondary">
+                            <ha-button variant="danger" @click=${this._handleDelete}>
+                                ${this._localize('common.delete')}
+                            </ha-button>
+
+                            <ha-button appearance="plain" @click=${this._handleDuplicate}>
+                                ${this._localize('common.duplicate')}
+                            </ha-button>
+                        </div>
+                    ` : nothing}
+
+                    <div class="dialog-footer__primary">
+                        <ha-button appearance="accent" @click=${this._handleSave}>
+                            ${this._localize('common.save')}
+                        </ha-button>
+                    </div>
+                </div>
             </ha-dialog>
         `;
     }

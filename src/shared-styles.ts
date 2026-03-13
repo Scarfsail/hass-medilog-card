@@ -8,12 +8,35 @@ export const sharedStyles = css`
          }      
          ha-button.button-error{
             --mdc-theme-primary: var(--error-color);
-         }  
-        
-        .controls {
+          }  
+
+         .dialog-footer {
             display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
+            align-items: center;
+            justify-content: flex-end;
+            gap: var(--ha-space-3, 12px);
+            width: 100%;
+            flex-wrap: wrap;
+         }
+
+         .dialog-footer__secondary {
+            display: flex;
+            align-items: center;
+            gap: var(--ha-space-3, 12px);
+            margin-right: auto;
+            flex-wrap: wrap;
+         }
+
+         .dialog-footer__primary {
+            display: flex;
+            align-items: center;
+            gap: var(--ha-space-3, 12px);
+         }
+         
+         .controls {
+             display: flex;
+             gap: 8px;
+             margin-bottom: 16px;
             align-items: center;
         }
         

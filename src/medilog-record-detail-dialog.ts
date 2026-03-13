@@ -3,7 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import dayjs from "dayjs";
 import { MedilogRecord, MedilogRecordRaw, Medication } from "./models";
 import type { HomeAssistant } from "../hass-frontend/src/types";
-import { mdiClose, mdiCloseCircle } from '@mdi/js';
+import { mdiCloseCircle } from '@mdi/js';
 import { sharedStyles } from "./shared-styles";
 import { loadHaForm, loadHaYamlEditor } from "./load-ha-elements";
 import { getLocalizeFunction, LocalizeFunction } from "./localize/localize";
@@ -106,14 +106,12 @@ export class MedilogRecordDetailDialog extends LitElement {
             return nothing;
         }
 
+        const dialogTitle = this._editedRecord.id
+            ? this._localize('dialog.edit_record')
+            : this._localize('dialog.new_record');
+
         return html`
-            <ha-dialog open .heading=${true} @closed=${this.closeDialog} @close-dialog=${this.closeDialog}>
-                <ha-dialog-header slot="heading">
-                    <ha-icon-button slot="navigationIcon" dialogAction="cancel" .path=${mdiClose}></ha-icon-button>
-                    <span slot="title">${this._editedRecord.id
-                ? this._localize('dialog.edit_record')
-                : this._localize('dialog.new_record')}</span>
-                </ha-dialog-header>
+            <ha-dialog open .hass=${this.hass} .headerTitle=${dialogTitle} @closed=${() => this.closeDialog()}>
                 <div class="wrapper">
                     <div class="datetime-field">
                         <ha-selector
@@ -184,20 +182,25 @@ export class MedilogRecordDetailDialog extends LitElement {
 
                 </div>
 
-                ${this._editedRecord.id ? html`
-                    <ha-button slot="primaryAction" .variant=${"danger"} @click=${this.deleteClick} class="button-error">
-                        ${this._localize('common.delete')}
-                    </ha-button>
-                
-                <ha-button slot="primaryAction" @click=${this.duplicateClick}>
-                    ${this._localize('common.duplicate')}
-                </ha-button>
+                <div slot="footer" class="dialog-footer">
+                    ${this._editedRecord.id ? html`
+                        <div class="dialog-footer__secondary">
+                            <ha-button variant="danger" @click=${this.deleteClick}>
+                                ${this._localize('common.delete')}
+                            </ha-button>
 
-                ` : nothing}
+                            <ha-button appearance="plain" @click=${this.duplicateClick}>
+                                ${this._localize('common.duplicate')}
+                            </ha-button>
+                        </div>
+                    ` : nothing}
 
-                <ha-button slot="primaryAction" .variant=${"success"} @click=${this.saveClick}>
-                    ${this._localize('common.save')}
-                </ha-button>
+                    <div class="dialog-footer__primary">
+                        <ha-button appearance="accent" @click=${this.saveClick}>
+                            ${this._localize('common.save')}
+                        </ha-button>
+                    </div>
+                </div>
             </ha-dialog>
         `;
 
